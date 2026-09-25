@@ -134,6 +134,16 @@ docker compose logs -f web
 docker compose exec web python manage.py migrate
 ```
 
+
+```bash
+docker compose exec web python manage.py makemigrations recall_app
+```
+
+```bash
+docker compose exec web python manage.py migrate recall_app
+```
+
+
 ---
 
 ## 8. Seed the initial LeetCode problem catalog
