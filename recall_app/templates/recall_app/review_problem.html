@@ -1,0 +1,52 @@
+{% extends "recall_app/base.html" %}
+{% block title %}Review · {{ problem.problem_name }}{% endblock %}
+{% block content %}
+<div class="problem-head">
+  <h1><span class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">#{{ problem.problemid }}</span> {{ problem.problem_name }}</h1>
+  <span class="badge badge-category">{{ problem.category }}</span>
+</div>
+
+<h2 class="section-title">Notes</h2>
+<div class="panel notes-panel">
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label for="notes">Your notes</label>
+      <textarea id="notes" name="notes">{% if review %}{{ review.notes }}{% endif %}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="field understanding-select">
+        <label for="understanding">Understanding</label>
+        <select id="understanding" name="understanding" required>
+          {% for i in "12345" %}
+          <option value="{{ i }}" {% if review and review.understanding|stringformat:"s" == i %}selected{% endif %}>{{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: auto;">Save review</button>
+    </div>
+  </form>
+</div>
+
+<h2 class="section-title">Solutions ({{ solutions|length }})</h2>
+{% if solutions %}
+<div class="solutions-list">
+  {% for solution in solutions %}
+  <div class="solution-card">
+    <div class="solution-header">
+      <span class="window-dots"><span></span><span></span><span></span></span>
+      <span class="solution-title">{{ solution.title }}</span>
+    </div>
+    <pre class="solution-code"><code>{{ solution.code }}</code></pre>
+    {% if solution.explanation %}
+    <div class="solution-explanation">{{ solution.explanation }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <h3>No solutions saved</h3>
+</div>
+{% endif %}
+{% endblock %}

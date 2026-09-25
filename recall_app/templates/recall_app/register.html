@@ -1,0 +1,29 @@
+{% extends "recall_app/base.html" %}
+{% block title %}Sign up · Recall{% endblock %}
+{% block auth_content %}
+<div class="auth-card">
+  <div class="brand">
+    <span class="brand-mark">&lt;/&gt;</span>
+    <span class="brand-name">Recall</span>
+  </div>
+  <h1>Create your account</h1>
+  <p class="subtitle">Track problems, notes, and solutions in one place.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Sign up</button>
+  </form>
+
+  <div class="auth-switch">
+    Already have an account? <a href="{% url 'login' %}">Log in</a>
+  </div>
+</div>
+{% endblock %}

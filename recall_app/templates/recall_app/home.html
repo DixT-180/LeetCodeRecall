@@ -1,0 +1,291 @@
+{% extends "recall_app/base.html" %}
+
+{% block title %}Dashboard · Recall{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <p class="subtitle">
+    Problems ranked by how much you're likely to have forgotten.
+  </p>
+</div>
+
+{% if messages %}
+<div class="page-messages" style="margin-bottom: 16px;">
+  {% for message in messages %}
+    <div
+      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}"
+      style="
+        padding: 10px 14px;
+        border-radius: 6px;
+        background: #eafaf1;
+        border: 1px solid #b7ebc6;
+        color: #1e7e34;
+        font-size: 14px;
+        margin-bottom: 8px;
+      "
+    >
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+
+{% if recommendations %}
+
+<div class="rec-controls" style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
+  <select
+    id="sort-select"
+    class="sort-select"
+    style="background-color: #fff; color: #111; border: 1px solid #ccc; padding: 6px 10px; border-radius: 6px;"
+  >
+    <option value="priority" style="color: #111; background-color: #fff;">Sort: Priority (default)</option>
+    <option value="avg_understanding" style="color: #111; background-color: #fff;">Sort: Avg Understanding (lowest first)</option>
+    <option value="duration" style="color: #111; background-color: #fff;">Sort: Duration (longest overdue first)</option>
+    <option value="last_reviewed" style="color: #111; background-color: #fff;">Sort: Last Reviewed (most recent first)</option>
+  </select>
+</div>
+
+<div class="rec-list" id="rec-list">
+
+  {% for rec in recommendations %}
+
+  {% widthratio rec.retention 1 100 as retention_pct %}
+
+  <div
+    class="rec-card
+      {% if rec.retention < 0.4 %}
+        tier-bad
+      {% elif rec.retention < 0.7 %}
+        tier-mid
+      {% else %}
+        tier-good
+      {% endif %}
+    "
+    style="position: relative;"
+    data-priority="{{ rec.priority }}"
+    data-avg-understanding="{{ rec.average_understanding }}"
+    data-duration="{{ rec.days_since_last_review }}"
+    data-last-reviewed="{{ rec.last_reviewed|date:'U' }}"
+  >
+
+    <div class="rec-card-actions" style="position: absolute; top: 10px; right: 10px; z-index: 2;">
+      <form
+        method="post"
+        action="{% url 'reset_problem_stats' problemid=rec.problem.problemid %}"
+        onsubmit="return confirm('Reset all stats for #{{ rec.problem.problemid }} - {{ rec.problem.problem_name|escapejs }}? This clears review history and cannot be undone.');"
+      >
+        {% csrf_token %}
+        <button
+          type="submit"
+          class="btn-reset"
+          title="Reset stats for this problem"
+          style="
+            background: rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.15);
+            color: #444;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            cursor: pointer;
+          "
+        >
+          ↺ Reset
+        </button>
+      </form>
+    </div>
+
+    <a
+      href="{% url 'problem_detail' problemid=rec.problem.problemid %}"
+      class="rec-card-link"
+      style="display: block; text-decoration: none; color: inherit;"
+    >
+
+    <div class="rec-main">
+
+      <div class="rec-title">
+        <span class="rec-id">
+          #{{ rec.problem.problemid }}
+        </span>
+
+        {{ rec.problem.problem_name }}
+      </div>
+
+
+      <div class="rec-meta">
+
+        <span>
+          {{ rec.problem.category }}
+        </span>
+
+        <span>
+          Reviewed {{ rec.number_of_reviews }}×
+        </span>
+
+        <span>
+          Current understanding:
+          {{ rec.current_understanding|floatformat:1 }}/10
+        </span>
+
+        <span>
+          Average understanding:
+          {{ rec.average_understanding|floatformat:1 }}/10
+        </span>
+
+        <span>
+          Adjusted:
+          {{ rec.adjusted_understanding|floatformat:1 }}/10
+        </span>
+
+        <span>
+          Last seen:
+          {{ rec.last_reviewed|date:"M j" }}
+        </span>
+
+      </div>
+
+
+      <!-- Recommendation -->
+
+      <div class="rec-recommendation">
+
+        <strong>
+          {{ rec.recommendation }}
+        </strong>
+
+      </div>
+
+
+      <!-- Detailed scores -->
+
+      <div class="rec-meta">
+
+        <span>
+          Days since review:
+          {{ rec.days_since_last_review|floatformat:1 }}
+        </span>
+
+        <span>
+          Half-life:
+          {{ rec.half_life|floatformat:1 }} days
+        </span>
+
+        <span>
+          Stability:
+          {{ rec.stability|floatformat:2 }}
+        </span>
+
+        <span>
+          Forgetting risk:
+          {{ rec.forgetting_risk|floatformat:2 }}
+        </span>
+
+        <span>
+          Understanding gap:
+          {{ rec.understanding_gap|floatformat:2 }}
+        </span>
+
+        <span>
+          Priority:
+          {{ rec.priority|floatformat:2 }}
+        </span>
+
+      </div>
+
+    </div>
+
+
+    <!-- Retention -->
+
+    <div class="rec-retention">
+
+      <div class="retention-top">
+
+        <span>
+          Retention
+        </span>
+
+        <span>
+          {{ retention_pct }}%
+        </span>
+
+      </div>
+
+
+      <div class="retention-track">
+
+        <div
+          class="retention-fill"
+          style="width: {{ retention_pct }}%;"
+        ></div>
+
+      </div>
+
+    </div>
+
+    </a>
+
+  </div>
+
+  {% endfor %}
+
+</div>
+
+<script>
+(function () {
+  const select = document.getElementById('sort-select');
+  const list = document.getElementById('rec-list');
+  if (!select || !list) return;
+
+  const sortConfigs = {
+    priority:          { attr: 'priority',         direction: 'desc' },
+    avg_understanding: { attr: 'avgUnderstanding',  direction: 'asc'  },
+    duration:          { attr: 'duration',         direction: 'desc' },
+    last_reviewed:     { attr: 'lastReviewed',      direction: 'desc' },
+  };
+
+  select.addEventListener('change', function () {
+    const config = sortConfigs[select.value];
+    if (!config) return;
+
+    const cards = Array.from(list.querySelectorAll('.rec-card'));
+
+    cards.sort(function (a, b) {
+      const aVal = parseFloat(a.dataset[config.attr]);
+      const bVal = parseFloat(b.dataset[config.attr]);
+      return config.direction === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    cards.forEach(function (card) {
+      list.appendChild(card);
+    });
+  });
+})();
+</script>
+
+{% else %}
+
+<div class="empty-state">
+
+  <h3>No reviews yet</h3>
+
+  <p>
+    Solve a problem and log your understanding
+    to start seeing recommendations here.
+  </p>
+
+  <a
+    href="{% url 'home_problems' %}"
+    class="btn btn-secondary"
+    style="margin-top: 10px; display: inline-flex;"
+  >
+    Browse problems
+  </a>
+
+</div>
+
+{% endif %}
+
+{% endblock %}

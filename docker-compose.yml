@@ -1,0 +1,25 @@
+services:
+  web:
+    image: leetcode-app:latest
+    network_mode: host
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - app.env
+    volumes:
+      - ./recall_app/management/commands:/app/leetcode/management/commands
+    command: sh -c "sleep 19 && python manage.py runserver 0.0.0.0:8000"
+
+
+  db:
+    image: mysql:8.0
+    network_mode: host
+    restart: always
+    env_file:
+      - app.env
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

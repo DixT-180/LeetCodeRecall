@@ -1,0 +1,41 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Recall{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'recall_app/css/style.css' %}">
+</head>
+<body>
+{% if user.is_authenticated %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">&lt;/&gt;</span>
+      <span class="brand-name">Recall</span>
+    </div>
+    <nav class="nav">
+      <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Dashboard</a>
+      <a href="{% url 'home_problems' %}" class="nav-link {% if request.resolver_match.url_name == 'home_problems' or request.resolver_match.url_name == 'problem_detail' %}active{% endif %}">Problems</a>
+      <a href="{% url 'review_history' %}" class="nav-link {% if request.resolver_match.url_name == 'review_history' %}active{% endif %}">History</a>
+    </nav>
+    <div class="user-chip">
+      <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
+      <span class="username">{{ user.username }}</span>
+      <a href="{% url 'logout' %}" class="logout-btn">Log out</a>
+    </div>
+  </aside>
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+{% else %}
+<main class="auth-main">
+  {% block auth_content %}{% endblock %}
+</main>
+{% endif %}
+</body>
+</html>

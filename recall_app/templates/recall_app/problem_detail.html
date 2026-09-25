@@ -1,0 +1,93 @@
+{% extends "recall_app/base.html" %}
+{% block title %}{{ problem.problem_name }} · Recall{% endblock %}
+{% block content %}
+
+<div class="problem-head">
+  <h1><span class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">#{{ problem.problemid }}</span> {{ problem.problem_name }}</h1>
+  <span class="badge badge-category">{{ problem.category }}</span>
+</div>
+
+<div class="problem-desc">{{ problem.problem_description }}</div>
+
+<!-- Notes & understanding -->
+<h2 class="section-title">Notes</h2>
+<div class="panel notes-panel">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="review">
+    <div class="field">
+      <label for="notes">Your notes</label>
+      <textarea id="notes" name="notes" placeholder="Approach, edge cases, things to remember next time...">{% if review %}{{ review.notes }}{% endif %}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="field understanding-select">
+        <label for="understanding">Understanding</label>
+        <select id="understanding" name="understanding" required>
+          {% for i in "12345" %}
+          <option value="{{ i }}" {% if review and review.understanding|stringformat:"s" == i %}selected{% endif %}>
+            {{ i }} —
+            {% if i == "1" %}Barely{% elif i == "2" %}Shaky{% elif i == "3" %}Okay{% elif i == "4" %}Solid{% else %}Mastered{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width: auto;">Save review</button>
+    </div>
+    {% if review %}
+    <p class="hint" style="margin-top: 12px;">Reviewed {{ review.number_of_reviews }} time{{ review.number_of_reviews|pluralize }} · last on {{ review.last_reviewed|date:"M j, Y" }}</p>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Solutions -->
+<h2 class="section-title">Solutions ({{ solutions|length }})</h2>
+
+{% if solutions %}
+<div class="solutions-list">
+  {% for solution in solutions %}
+  <div class="solution-card">
+    <div class="solution-header">
+      <span class="window-dots"><span></span><span></span><span></span></span>
+      <span class="solution-title">{{ solution.title }}</span>
+    </div>
+    <pre class="solution-code"><code>{{ solution.code }}</code></pre>
+    {% if solution.explanation %}
+    <div class="solution-explanation">{{ solution.explanation }}</div>
+    {% endif %}
+    <div class="solution-footer">
+      <form method="post" action="{% url 'delete_solution' solution_id=solution.id %}" onsubmit="return confirm('Delete this solution?');">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger-ghost">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="margin-bottom: 22px;">
+  <h3>No solutions saved</h3>
+  <p>Add the approach you used below so you can compare attempts later.</p>
+</div>
+{% endif %}
+
+<div class="panel">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="form_type" value="solution">
+    <div class="field">
+      <label for="title">Solution title</label>
+      <input type="text" id="title" name="title" placeholder="e.g. Two-pointer, O(n)" required>
+    </div>
+    <div class="field">
+      <label for="code">Code</label>
+      <textarea id="code" name="code" class="mono" placeholder="Paste your solution code" required></textarea>
+    </div>
+    <div class="field">
+      <label for="explanation">Explanation <span class="hint" style="display:inline;">(optional)</span></label>
+      <textarea id="explanation" name="explanation" placeholder="Why this works, complexity, gotchas..."></textarea>
+    </div>
+    <button type="submit" class="btn btn-secondary" style="width: auto;">Add solution</button>
+  </form>
+</div>
+
+{% endblock %}

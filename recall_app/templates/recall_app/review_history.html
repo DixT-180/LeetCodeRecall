@@ -1,0 +1,34 @@
+{% extends "recall_app/base.html" %}
+{% block title %}History · Recall{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Review history</h1>
+  <p class="subtitle">Every logged review, most recent first.</p>
+</div>
+
+{% if histories %}
+<table class="problem-table history-table">
+  <thead>
+    <tr>
+      <th>Problem</th>
+      <th style="width: 140px;">Understanding</th>
+      <th style="width: 180px;">Reviewed at</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for history in histories %}
+    <tr class="problem-row" onclick="window.location='{% url 'problem_detail' problemid=history.problem_review.problem.problemid %}';" style="cursor: pointer;">
+      <td><a href="{% url 'problem_detail' problemid=history.problem_review.problem.problemid %}" class="problem-name-link">{{ history.problem_review.problem.problem_name }}</a></td>
+      <td class="understanding-cell">{{ history.understanding }}/5</td>
+      <td>{{ history.reviewed_at|date:"M j, Y — g:i A" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <h3>No history yet</h3>
+  <p>Review logs will show up here once you save a problem review.</p>
+</div>
+{% endif %}
+{% endblock %}
