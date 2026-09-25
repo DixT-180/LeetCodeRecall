@@ -231,6 +231,7 @@ def get_recommendations(user):
     problem_reviews = (
         ProblemReview.objects
         .filter(user=user)
+        .exclude(number_of_reviews=0)
         .select_related("problem")
     )
 
