@@ -1,6 +1,6 @@
 services:
   web:
-    image: leetcode-app:latest
+    image: recall_leet:0.0.1
     network_mode: host
     restart: always
     depends_on:
@@ -15,7 +15,6 @@ services:
   db:
     image: mysql:8.0
     network_mode: host
-    restart: always
     env_file:
       - app.env
     volumes:
