@@ -8,7 +8,6 @@ from django.views.decorators.http import require_POST
 
 from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
-from django.views.decorators.http import require_POST
 
 
 def register(request):
@@ -56,19 +55,6 @@ def logout_view(request):
     return redirect("login")
 
 
-# @login_required
-# def problem_list(request):
-
-#     problems = Problem.objects.all().order_by("problemid")
-
-#     return render(
-#         request,
-#         "recall_app/home_problems.html",
-#         {
-#             "problems": problems
-#         }
-#     )
-
 @login_required
 def problem_list(request):
 
@@ -92,6 +78,7 @@ def problem_list(request):
             "query": query,
         }
     )
+
 
 @login_required
 def home(request):
@@ -203,6 +190,32 @@ def delete_solution(request, solution_id):
 
 @login_required
 @require_POST
+def edit_solution(request, solution_id):
+    solution = get_object_or_404(
+        Solution,
+        id=solution_id,
+        problem_review__user=request.user
+    )
+
+    title = request.POST.get("title", "").strip()
+    code = request.POST.get("code", "")
+    explanation = request.POST.get("explanation", "")
+
+    if not title or not code:
+        messages.error(request, "Title and code are required.")
+    else:
+        solution.title = title
+        solution.code = code
+        solution.explanation = explanation
+        solution.save()
+        messages.success(request, "Solution updated.")
+
+    problemid = solution.problem_review.problem.problemid
+    return redirect("problem_detail", problemid=problemid)
+
+
+@login_required
+@require_POST
 def reset_problem_stats(request, problemid):
     """
     Resets a single problem's review stats for the current user back to
@@ -298,7 +311,6 @@ def review_problem(request, problemid):
     )
 
 
-
 @login_required
 def add_problem(request):
     error = None
@@ -332,18 +344,6 @@ def add_problem(request):
     )
 
 
-
-
-@login_required
-@require_POST
-def delete_problem(request, problemid):
-    problem = get_object_or_404(Problem, problemid=problemid)
-    problem_name = problem.problem_name
-    problem.delete()  # cascades: ProblemReview -> ReviewHistory + Solution, for all users
-    messages.success(request, f"Problem #{problemid} - {problem_name} deleted.")
-    return redirect("home_problems")
-
-
 @login_required
 def edit_problem(request, problemid):
     problem = get_object_or_404(Problem, problemid=problemid)
@@ -375,3 +375,13 @@ def edit_problem(request, problemid):
         "recall_app/edit_problem.html",
         {"problem": problem, "error": error}
     )
+
+
+@login_required
+@require_POST
+def delete_problem(request, problemid):
+    problem = get_object_or_404(Problem, problemid=problemid)
+    problem_name = problem.problem_name
+    problem.delete()  # cascades: ProblemReview -> ReviewHistory + Solution, for all users
+    messages.success(request, f"Problem #{problemid} - {problem_name} deleted.")
+    return redirect("home_problems")
