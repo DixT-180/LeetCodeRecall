@@ -56,3 +56,29 @@ class Solution(models.Model):
 
     def __str__(self):
         return self.title
+
+
+@login_required
+@require_POST
+def edit_solution(request, solution_id):
+    solution = get_object_or_404(
+        Solution,
+        id=solution_id,
+        problem_review__user=request.user
+    )
+
+    title = request.POST.get("title", "").strip()
+    code = request.POST.get("code", "")
+    explanation = request.POST.get("explanation", "")
+
+    if not title or not code:
+        messages.error(request, "Title and code are required.")
+    else:
+        solution.title = title
+        solution.code = code
+        solution.explanation = explanation
+        solution.save()
+        messages.success(request, "Solution updated.")
+
+    problemid = solution.problem_review.problem.problemid
+    return redirect("problem_detail", problemid=problemid)

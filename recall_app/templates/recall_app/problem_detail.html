@@ -7,6 +7,19 @@
   <span class="badge badge-category">{{ problem.category }}</span>
 </div>
 
+{% if messages %}
+<div class="page-messages" style="margin-bottom: 16px;">
+  {% for message in messages %}
+    <div
+      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}"
+      style="padding: 10px 14px; border-radius: 6px; background: #eafaf1; border: 1px solid #b7ebc6; color: #1e7e34; font-size: 14px; margin-bottom: 8px;"
+    >
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="problem-desc">{{ problem.problem_description }}</div>
 
 <!-- Notes & understanding -->
@@ -45,7 +58,9 @@
 {% if solutions %}
 <div class="solutions-list">
   {% for solution in solutions %}
-  <div class="solution-card">
+
+  <!-- Read-only view -->
+  <div class="solution-card" id="view-{{ solution.id }}">
     <div class="solution-header">
       <span class="window-dots"><span></span><span></span><span></span></span>
       <span class="solution-title">{{ solution.title }}</span>
@@ -55,12 +70,37 @@
     <div class="solution-explanation">{{ solution.explanation }}</div>
     {% endif %}
     <div class="solution-footer">
+      <button type="button" class="btn-ghost" onclick="toggleEdit({{ solution.id }})">Edit</button>
       <form method="post" action="{% url 'delete_solution' solution_id=solution.id %}" onsubmit="return confirm('Delete this solution?');">
         {% csrf_token %}
         <button type="submit" class="btn-danger-ghost">Delete</button>
       </form>
     </div>
   </div>
+
+  <!-- Editable form, hidden until "Edit" is clicked -->
+  <div class="solution-card" id="edit-{{ solution.id }}" style="display:none;">
+    <form method="post" action="{% url 'edit_solution' solution_id=solution.id %}">
+      {% csrf_token %}
+      <div class="field">
+        <label for="title-{{ solution.id }}">Solution title</label>
+        <input type="text" id="title-{{ solution.id }}" name="title" value="{{ solution.title }}" required>
+      </div>
+      <div class="field">
+        <label for="code-{{ solution.id }}">Code</label>
+        <textarea id="code-{{ solution.id }}" name="code" class="mono" required>{{ solution.code }}</textarea>
+      </div>
+      <div class="field">
+        <label for="explanation-{{ solution.id }}">Explanation <span class="hint" style="display:inline;">(optional)</span></label>
+        <textarea id="explanation-{{ solution.id }}" name="explanation">{{ solution.explanation }}</textarea>
+      </div>
+      <div class="form-row">
+        <button type="submit" class="btn btn-primary" style="width: auto;">Save changes</button>
+        <button type="button" class="btn btn-secondary" style="width: auto;" onclick="toggleEdit({{ solution.id }})">Cancel</button>
+      </div>
+    </form>
+  </div>
+
   {% endfor %}
 </div>
 {% else %}
@@ -89,5 +129,19 @@
     <button type="submit" class="btn btn-secondary" style="width: auto;">Add solution</button>
   </form>
 </div>
+
+<script>
+function toggleEdit(id) {
+  var view = document.getElementById('view-' + id);
+  var edit = document.getElementById('edit-' + id);
+  if (edit.style.display === 'none') {
+    view.style.display = 'none';
+    edit.style.display = 'block';
+  } else {
+    view.style.display = 'block';
+    edit.style.display = 'none';
+  }
+}
+</script>
 
 {% endblock %}

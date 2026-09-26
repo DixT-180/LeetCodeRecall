@@ -30,4 +30,5 @@ urlpatterns = [
     path("problem/add/", views.add_problem, name="add_problem"),
     path("problem/<int:problemid>/delete/", views.delete_problem, name="delete_problem"),
     path("problem/<int:problemid>/edit/", views.edit_problem, name="edit_problem"),
+    path("solution/<int:solution_id>/edit/", views.edit_solution, name="edit_solution"),
 ]
