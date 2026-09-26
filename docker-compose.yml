@@ -1,6 +1,6 @@
 services:
   web:
-    image: recall_app:latest
+    image: recall-app:latest
     network_mode: host
     restart: always
     depends_on:
