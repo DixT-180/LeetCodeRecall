@@ -278,7 +278,8 @@ def get_recommendations(user):
         # Days since last review
         # -----------------------------------
         days_since_last_review = (
-            timezone.now() + timedelta(days=15) - problem_review.last_reviewed
+            # timezone.now() + timedelta(days=15) - problem_review.last_reviewed
+            timezone.now() - problem_review.last_reviewed
         ).total_seconds() / 86400
 
         # -----------------------------------
