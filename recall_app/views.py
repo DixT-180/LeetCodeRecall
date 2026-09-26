@@ -319,3 +319,36 @@ def delete_problem(request, problemid):
     problem.delete()  # cascades: ProblemReview -> ReviewHistory + Solution, for all users
     messages.success(request, f"Problem #{problemid} - {problem_name} deleted.")
     return redirect("home_problems")
+
+
+@login_required
+def edit_problem(request, problemid):
+    problem = get_object_or_404(Problem, problemid=problemid)
+    error = None
+
+    if request.method == "POST":
+        problem_name = request.POST.get("problem_name", "").strip()
+        new_problemid = request.POST.get("problemid", "").strip()
+        category = request.POST.get("category", "").strip()
+        problem_description = request.POST.get("problem_description", "").strip()
+
+        if not problem_name or not new_problemid or not category or not problem_description:
+            error = "All fields are required."
+        elif not new_problemid.isdigit():
+            error = "Problem ID must be a number."
+        elif int(new_problemid) != problem.problemid and Problem.objects.filter(problemid=new_problemid).exists():
+            error = f"Problem #{new_problemid} already exists."
+        else:
+            problem.problem_name = problem_name
+            problem.problemid = new_problemid
+            problem.category = category
+            problem.problem_description = problem_description
+            problem.save()
+            messages.success(request, f"Problem #{new_problemid} - {problem_name} updated.")
+            return redirect("home_problems")
+
+    return render(
+        request,
+        "recall_app/edit_problem.html",
+        {"problem": problem, "error": error}
+    )
