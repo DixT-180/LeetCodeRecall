@@ -21,6 +21,7 @@
       <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Dashboard</a>
       <a href="{% url 'home_problems' %}" class="nav-link {% if request.resolver_match.url_name == 'home_problems' or request.resolver_match.url_name == 'problem_detail' %}active{% endif %}">Problems</a>
       <a href="{% url 'review_history' %}" class="nav-link {% if request.resolver_match.url_name == 'review_history' %}active{% endif %}">History</a>
+      <a href="{% url 'add_problem' %}" class="nav-link {% if request.resolver_match.url_name == 'add_problem' %}active{% endif %}">+ Add Problem</a>
     </nav>
     <div class="user-chip">
       <span class="avatar">{{ user.username|slice:":1"|upper }}</span>
