@@ -27,4 +27,5 @@ urlpatterns = [
         views.delete_solution,
         name="delete_solution"
     ),
+    path("problem/add/", views.add_problem, name="add_problem"),
 ]

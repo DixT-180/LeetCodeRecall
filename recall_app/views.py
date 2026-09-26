@@ -272,3 +272,37 @@ def review_problem(request, problemid):
             "solutions": solutions,
         }
     )
+
+
+
+@login_required
+def add_problem(request):
+    error = None
+
+    if request.method == "POST":
+        problem_name = request.POST.get("problem_name", "").strip()
+        problemid = request.POST.get("problemid", "").strip()
+        category = request.POST.get("category", "").strip()
+        problem_description = request.POST.get("problem_description", "").strip()
+
+        if not problem_name or not problemid or not category or not problem_description:
+            error = "All fields are required."
+        elif not problemid.isdigit():
+            error = "Problem ID must be a number."
+        elif Problem.objects.filter(problemid=problemid).exists():
+            error = f"Problem #{problemid} already exists."
+        else:
+            Problem.objects.create(
+                problem_name=problem_name,
+                problemid=problemid,
+                category=category,
+                problem_description=problem_description,
+            )
+            messages.success(request, f"Problem #{problemid} - {problem_name} added.")
+            return redirect("home_problems")
+
+    return render(
+        request,
+        "recall_app/add_problem.html",
+        {"error": error}
+    )

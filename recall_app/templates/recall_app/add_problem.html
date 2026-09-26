@@ -1,0 +1,110 @@
+{% extends "recall_app/base.html" %}
+
+{% block title %}Add Problem · Recall{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <h1>Add a Problem</h1>
+  <p class="subtitle">
+    Add a new problem to the catalog. You can paste test cases directly
+    into the description — they'll show up wherever the description is
+    rendered.
+  </p>
+</div>
+
+{% if error %}
+<div
+  class="alert alert-error"
+  style="
+    padding: 10px 14px;
+    border-radius: 6px;
+    background: #fdecea;
+    border: 1px solid #f5c2c0;
+    color: #a12622;
+    font-size: 14px;
+    margin-bottom: 16px;
+  "
+>
+  {{ error }}
+</div>
+{% endif %}
+
+<form method="post" class="add-problem-form">
+  {% csrf_token %}
+
+  <div style="margin-bottom: 14px;">
+    <label for="problemid" style="display:block; font-weight:600; margin-bottom:4px;">
+      Problem ID
+    </label>
+    <input
+      type="number"
+      id="problemid"
+      name="problemid"
+      required
+      style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:6px;"
+    >
+  </div>
+
+  <div style="margin-bottom: 14px;">
+    <label for="problem_name" style="display:block; font-weight:600; margin-bottom:4px;">
+      Title
+    </label>
+    <input
+      type="text"
+      id="problem_name"
+      name="problem_name"
+      maxlength="255"
+      required
+      style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:6px;"
+    >
+  </div>
+
+  <div style="margin-bottom: 14px;">
+    <label for="category" style="display:block; font-weight:600; margin-bottom:4px;">
+      Category
+    </label>
+    <input
+      type="text"
+      id="category"
+      name="category"
+      maxlength="10"
+      placeholder="e.g. Array, DP, Tree"
+      required
+      style="width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:6px;"
+    >
+    <small style="color:#666;">Max 10 characters.</small>
+  </div>
+
+  <div style="margin-bottom: 18px;">
+    <label for="problem_description" style="display:block; font-weight:600; margin-bottom:4px;">
+      Description (include test cases here)
+    </label>
+    <textarea
+      id="problem_description"
+      name="problem_description"
+      rows="14"
+      required
+      placeholder="Problem statement...
+
+Example 1:
+Input: ...
+Output: ...
+
+Example 2:
+Input: ...
+Output: ..."
+      style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; font-family: monospace; resize: vertical;"
+    ></textarea>
+  </div>
+
+  <button
+    type="submit"
+    class="btn btn-primary"
+  >
+    Save Problem
+  </button>
+
+</form>
+
+{% endblock %}
