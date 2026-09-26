@@ -23,7 +23,7 @@
     Search
   </button>
   {% if query %}
-  
+  <a
     href="{% url 'home_problems' %}"
     class="btn btn-secondary"
     style="padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;"
@@ -34,6 +34,7 @@
 </form>
 
 {% if messages %}
+
 <div class="page-messages" style="margin-bottom: 16px;">
   {% for message in messages %}
     <div
@@ -64,7 +65,7 @@
       <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td>
       <td><span class="badge badge-category">{{ problem.category }}</span></td>
       <td>
-        
+        <a
           href="{% url 'edit_problem' problemid=problem.problemid %}"
           onclick="event.stopPropagation();"
           title="Edit this problem"
@@ -93,7 +94,9 @@
     {% endfor %}
   </tbody>
 </table>
+
 {% else %}
+
 <div class="empty-state">
   {% if query %}
   <h3>No matches for "{{ query }}"</h3>
@@ -103,5 +106,6 @@
   <p>Add problems from the admin panel to get started.</p>
   {% endif %}
 </div>
+
 {% endif %}
 {% endblock %}
