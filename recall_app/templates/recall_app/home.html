@@ -1,3 +1,4 @@
+```html
 {% extends "recall_app/base.html" %}
 
 {% block title %}Dashboard · Recall{% endblock %}
@@ -9,8 +10,6 @@
   <p class="subtitle">
     Problems ranked by how much you're likely to have forgotten.
   </p>
-  
-</a>
 </div>
 
 {% if messages %}
@@ -99,6 +98,7 @@
       </form>
     </div>
 
+
     <a
       href="{% url 'problem_detail' problemid=rec.problem.problemid %}"
       class="rec-card-link"
@@ -138,7 +138,7 @@
 
         <span>
           Adjusted:
-          {{ rec.adjusted_understanding|floatformat:1 }}/5
+          {{ rec.adjusted_understanding|floatformat:1 }}/10
         </span>
 
         <span>
@@ -175,8 +175,8 @@
         </span>
 
         <span>
-          Stability:
-          {{ rec.stability|floatformat:2 }}
+          Difficulty:
+          {% widthratio rec.difficulty 1 100 %}%
         </span>
 
         <span>
@@ -193,6 +193,16 @@
           Priority:
           {{ rec.priority|floatformat:2 }}
         </span>
+
+        {% if rec.days_overdue > 0 %}
+        <span style="color:#a12622;">
+          Overdue by {{ rec.days_overdue|floatformat:1 }}d
+        </span>
+        {% else %}
+        <span>
+          Review due in {{ rec.days_until_due|floatformat:1 }}d
+        </span>
+        {% endif %}
 
       </div>
 
@@ -257,7 +267,10 @@
     cards.sort(function (a, b) {
       const aVal = parseFloat(a.dataset[config.attr]);
       const bVal = parseFloat(b.dataset[config.attr]);
-      return config.direction === 'asc' ? aVal - bVal : bVal - aVal;
+
+      return config.direction === 'asc'
+        ? aVal - bVal
+        : bVal - aVal;
     });
 
     cards.forEach(function (card) {
@@ -278,6 +291,7 @@
     to start seeing recommendations here.
   </p>
 
+
   <a
     href="{% url 'home_problems' %}"
     class="btn btn-secondary"
@@ -291,3 +305,18 @@
 {% endif %}
 
 {% endblock %}
+```
+
+The two fixes are:
+
+```html
+<a
+  href="{% url 'problem_detail' problemid=rec.problem.problemid %}"
+```
+
+and:
+
+```html
+<a
+  href="{% url 'home_problems' %}"
+```
