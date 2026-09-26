@@ -157,7 +157,7 @@ updates existing rows by `problemid` instead of duplicating them).
 **Before running it**, make sure the file is placed at:
 
 ```
-recall_app/management/commands/seed_problems.py
+recall_app/management/commands/seed_leetcode.py
 ```
 
 > Note: `docker-compose.yml` currently mounts
@@ -171,7 +171,7 @@ recall_app/management/commands/seed_problems.py
 Once the file is in place, run:
 
 ```bash
-docker compose exec web python manage.py seed_problems
+docker compose exec web python manage.py seed_leetcode
 ```
 
 You should see output like:

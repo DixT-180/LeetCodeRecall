@@ -20,8 +20,8 @@ class ProblemReview(models.Model):
     last_reviewed = models.DateTimeField(auto_now_add=True)
     understanding = models.IntegerField()
     number_of_reviews = models.IntegerField(default=1)
-    # half_life = models.FloatField(default=0)
-    # retention = models.FloatField(default=1)
+    half_life = models.FloatField(default=0)
+    retention = models.FloatField(default=1)
     class Meta:
         constraints = [
             models.UniqueConstraint(

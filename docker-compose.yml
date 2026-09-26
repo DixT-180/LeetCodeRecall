@@ -1,6 +1,6 @@
 services:
   web:
-    image: recall_leet:0.0.1
+    image: recall_app:latest
     network_mode: host
     restart: always
     depends_on:
