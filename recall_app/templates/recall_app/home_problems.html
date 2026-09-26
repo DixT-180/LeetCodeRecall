@@ -1,4 +1,4 @@
-{% extends "recall_app/base.html" %}
+<!-- {% extends "recall_app/base.html" %}
 {% block title %}Problems · Recall{% endblock %}
 {% block content %}
 <div class="page-header">
@@ -21,6 +21,71 @@
       <td class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">{{ problem.problemid }}</td>
       <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td>
       <td><span class="badge badge-category">{{ problem.category }}</span></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+  <h3>No problems yet</h3>
+  <p>Add problems from the admin panel to get started.</p>
+</div>
+{% endif %}
+{% endblock %} -->
+{% extends "recall_app/base.html" %}
+{% block title %}Problems · Recall{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Problems</h1>
+  <p class="subtitle">{{ problems|length }} problem{{ problems|length|pluralize }} in the bank.</p>
+</div>
+
+{% if messages %}
+<div class="page-messages" style="margin-bottom: 16px;">
+  {% for message in messages %}
+    <div
+      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}"
+      style="padding: 10px 14px; border-radius: 6px; background: #eafaf1; border: 1px solid #b7ebc6; color: #1e7e34; font-size: 14px; margin-bottom: 8px;"
+    >
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if problems %}
+<table class="problem-table">
+  <thead>
+    <tr>
+      <th style="width: 70px;">ID</th>
+      <th>Name</th>
+      <th style="width: 160px;">Category</th>
+      <th style="width: 90px;"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for problem in problems %}
+    <tr class="problem-row" onclick="window.location='{% url 'problem_detail' problemid=problem.problemid %}';" style="cursor: pointer;">
+      <td class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">{{ problem.problemid }}</td>
+      <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td>
+      <td><span class="badge badge-category">{{ problem.category }}</span></td>
+      <td>
+        <form
+          method="post"
+          action="{% url 'delete_problem' problemid=problem.problemid %}"
+          onsubmit="return confirm('Delete #{{ problem.problemid }} - {{ problem.problem_name|escapejs }}? This removes all reviews, history, and solutions tied to it. Cannot be undone.');"
+          onclick="event.stopPropagation();"
+        >
+          {% csrf_token %}
+          <button
+            type="submit"
+            title="Delete this problem"
+            style="background: rgba(200,0,0,0.08); border: 1px solid rgba(200,0,0,0.25); color: #a12622; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;"
+          >
+            🗑 Delete
+          </button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </tbody>

@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 
 from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
+from django.views.decorators.http import require_POST
 
 
 def register(request):
@@ -306,3 +307,15 @@ def add_problem(request):
         "recall_app/add_problem.html",
         {"error": error}
     )
+
+
+
+
+@login_required
+@require_POST
+def delete_problem(request, problemid):
+    problem = get_object_or_404(Problem, problemid=problemid)
+    problem_name = problem.problem_name
+    problem.delete()  # cascades: ProblemReview -> ReviewHistory + Solution, for all users
+    messages.success(request, f"Problem #{problemid} - {problem_name} deleted.")
+    return redirect("home_problems")

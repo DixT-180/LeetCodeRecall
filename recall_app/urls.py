@@ -28,4 +28,5 @@ urlpatterns = [
         name="delete_solution"
     ),
     path("problem/add/", views.add_problem, name="add_problem"),
+    path("problem/<int:problemid>/delete/", views.delete_problem, name="delete_problem"),
 ]
