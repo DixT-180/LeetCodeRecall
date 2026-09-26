@@ -1,111 +1,116 @@
-{% extends "recall_app/base.html" %}
-{% block title %}Problems · Recall{% endblock %}
-{% block content %}
+```html
+{% extends "recall_app/base.html" %} 
+{% block title %}Problems · Recall{% endblock %} 
+{% block content %} 
+ 
+<div class="page-header"> 
+  <h1>Problems</h1> 
+  <p class="subtitle">{{ problems|length }} problem{{ problems|length|pluralize }} in the bank.</p> 
+</div> 
+ 
+<form method="get" style="margin-bottom: 18px; display: flex; gap: 8px;"> 
+  <input 
+    type="text" 
+    name="q" 
+    value="{{ query }}" 
+    placeholder="Search by problem ID or title..." 
+    style="flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; color: #111; background: #fff;" 
+  > 
+  <button 
+    type="submit" 
+    class="btn btn-secondary" 
+    style="padding: 8px 16px; border-radius: 6px; cursor: pointer;" 
+  > 
+    Search 
+  </button> 
+  {% if query %} 
+  <a 
+    href="{% url 'home_problems' %}" 
+    class="btn btn-secondary" 
+    style="padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;" 
+  > 
+    Clear 
+  </a> 
+  {% endif %} 
+</form> 
+ 
+{% if messages %} 
+ 
+<div class="page-messages" style="margin-bottom: 16px;"> 
+  {% for message in messages %} 
+    <div 
+      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}" 
+      style="padding: 10px 14px; border-radius: 6px; background: #eafaf1; border: 1px solid #b7ebc6; color: #1e7e34; font-size: 14px; margin-bottom: 8px;" 
+    > 
+      {{ message }} 
+    </div> 
+  {% endfor %} 
+</div> 
+{% endif %} 
+ 
+{% if problems %} 
+ 
+<table class="problem-table"> 
+  <thead> 
+    <tr> 
+      <th style="width: 70px;">ID</th> 
+      <th>Name</th> 
+      <th style="width: 160px;">Category</th> 
+      <th style="width: 140px;"></th> 
+    </tr> 
+  </thead> 
+  <tbody> 
+    {% for problem in problems %} 
+    <tr class="problem-row" onclick="window.location='{% url 'problem_detail' problemid=problem.problemid %}';" style="cursor: pointer;"> 
+      <td class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">{{ problem.problemid }}</td> 
+      <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td> 
+      <td><span class="badge badge-category">{{ problem.category }}</span></td> 
+      <td style="white-space: nowrap;"> 
+        <a 
+          href="{% url 'edit_problem' problemid=problem.problemid %}" 
+          onclick="event.stopPropagation();" 
+          title="Edit this problem" 
+          style="background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12); color: #555; border-radius: 4px; padding: 2px 7px; font-size: 11px; text-decoration: none; margin-right: 12px; display: inline-block;" 
+        > 
+          ✎ Edit 
+        </a> 
 
-<div class="page-header">
-  <h1>Problems</h1>
-  <p class="subtitle">{{ problems|length }} problem{{ problems|length|pluralize }} in the bank.</p>
-</div>
-
-<form method="get" style="margin-bottom: 18px; display: flex; gap: 8px;">
-  <input
-    type="text"
-    name="q"
-    value="{{ query }}"
-    placeholder="Search by problem ID or title..."
-    style="flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; color: #111; background: #fff;"
-  >
-  <button
-    type="submit"
-    class="btn btn-secondary"
-    style="padding: 8px 16px; border-radius: 6px; cursor: pointer;"
-  >
-    Search
-  </button>
-  {% if query %}
-  <a
-    href="{% url 'home_problems' %}"
-    class="btn btn-secondary"
-    style="padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;"
-  >
-    Clear
-  </a>
-  {% endif %}
-</form>
-
-{% if messages %}
-
-<div class="page-messages" style="margin-bottom: 16px;">
-  {% for message in messages %}
-    <div
-      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}"
-      style="padding: 10px 14px; border-radius: 6px; background: #eafaf1; border: 1px solid #b7ebc6; color: #1e7e34; font-size: 14px; margin-bottom: 8px;"
-    >
-      {{ message }}
-    </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-{% if problems %}
-
-<table class="problem-table">
-  <thead>
-    <tr>
-      <th style="width: 70px;">ID</th>
-      <th>Name</th>
-      <th style="width: 160px;">Category</th>
-      <th style="width: 140px;"></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for problem in problems %}
-    <tr class="problem-row" onclick="window.location='{% url 'problem_detail' problemid=problem.problemid %}';" style="cursor: pointer;">
-      <td class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">{{ problem.problemid }}</td>
-      <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td>
-      <td><span class="badge badge-category">{{ problem.category }}</span></td>
-      <td>
-        <a
-          href="{% url 'edit_problem' problemid=problem.problemid %}"
-          onclick="event.stopPropagation();"
-          title="Edit this problem"
-          style="background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.15); color: #444; border-radius: 6px; padding: 4px 10px; font-size: 12px; text-decoration: none; margin-right: 6px; display: inline-block;"
-        >
-          ✎ Edit
-        </a>
-        <form
-          method="post"
-          action="{% url 'delete_problem' problemid=problem.problemid %}"
-          onsubmit="return confirm('Delete #{{ problem.problemid }} - {{ problem.problem_name|escapejs }}? This removes all reviews, history, and solutions tied to it. Cannot be undone.');"
-          onclick="event.stopPropagation();"
-          style="display: inline-block;"
-        >
-          {% csrf_token %}
-          <button
-            type="submit"
-            title="Delete this problem"
-            style="background: rgba(200,0,0,0.08); border: 1px solid rgba(200,0,0,0.25); color: #a12622; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;"
-          >
-            🗑 Delete
-          </button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-{% else %}
-
-<div class="empty-state">
-  {% if query %}
-  <h3>No matches for "{{ query }}"</h3>
-  <p>Try a different ID or title, or <a href="{% url 'home_problems' %}">clear the search</a>.</p>
-  {% else %}
-  <h3>No problems yet</h3>
-  <p>Add problems from the admin panel to get started.</p>
-  {% endif %}
-</div>
-
-{% endif %}
+        <form 
+          method="post" 
+          action="{% url 'delete_problem' problemid=problem.problemid %}" 
+          onsubmit="return confirm('Delete #{{ problem.problemid }} - {{ problem.problem_name|escapejs }}? This removes all reviews, history, and solutions tied to it. Cannot be undone.');" 
+          onclick="event.stopPropagation();" 
+          style="display: inline-block;" 
+        > 
+          {% csrf_token %} 
+          <button 
+            type="submit" 
+            title="Delete this problem" 
+            style="background: rgba(200,0,0,0.05); border: 1px solid rgba(200,0,0,0.18); color: #a12622; border-radius: 4px; padding: 2px 7px; font-size: 11px; cursor: pointer;" 
+          > 
+            🗑 Delete 
+          </button> 
+        </form> 
+      </td> 
+    </tr> 
+    {% endfor %} 
+  </tbody> 
+</table> 
+ 
+{% else %} 
+ 
+<div class="empty-state"> 
+  {% if query %} 
+  <h3>No matches for "{{ query }}"</h3> 
+  <p>Try a different ID or title, or <a href="{% url 'home_problems' %}">clear the search</a>.</p> 
+  {% else %} 
+  <h3>No problems yet</h3> 
+  <p>Add problems from the admin panel to get started.</p> 
+  {% endif %} 
+</div> 
+ 
+{% endif %} 
 {% endblock %}
+```
+
+The only UI changes are the **smaller buttons**, **lighter styling**, and **12px gap** between Edit and Delete.
