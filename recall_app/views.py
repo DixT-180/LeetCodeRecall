@@ -56,19 +56,42 @@ def logout_view(request):
     return redirect("login")
 
 
+# @login_required
+# def problem_list(request):
+
+#     problems = Problem.objects.all().order_by("problemid")
+
+#     return render(
+#         request,
+#         "recall_app/home_problems.html",
+#         {
+#             "problems": problems
+#         }
+#     )
+
 @login_required
 def problem_list(request):
 
-    problems = Problem.objects.all().order_by("problemid")
+    query = request.GET.get("q", "").strip()
+
+    problems = Problem.objects.all()
+
+    if query:
+        if query.isdigit():
+            problems = problems.filter(problemid=query)
+        else:
+            problems = problems.filter(problem_name__icontains=query)
+
+    problems = problems.order_by("problemid")
 
     return render(
         request,
         "recall_app/home_problems.html",
         {
-            "problems": problems
+            "problems": problems,
+            "query": query,
         }
     )
-
 
 @login_required
 def home(request):
