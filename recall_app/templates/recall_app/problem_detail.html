@@ -70,7 +70,13 @@
     <div class="solution-explanation">{{ solution.explanation }}</div>
     {% endif %}
     <div class="solution-footer">
-      <button type="button" class="btn-ghost" onclick="toggleEdit({{ solution.id }})">Edit</button>
+     <button
+  type="button"
+  onclick="toggleEdit({{ solution.id }})"
+  style="background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.15); color: #444; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin-right: 6px;"
+>
+  ✎ Edit
+</button>
       <form method="post" action="{% url 'delete_solution' solution_id=solution.id %}" onsubmit="return confirm('Delete this solution?');">
         {% csrf_token %}
         <button type="submit" class="btn-danger-ghost">Delete</button>
@@ -139,7 +145,7 @@ function toggleEdit(id) {
     edit.style.display = 'block';
   } else {
     view.style.display = 'block';
-    edit.style.display = 'none';
+    edit.style.display = 'none'
   }
 }
 </script>
