@@ -173,7 +173,6 @@ def problem_detail(request, problemid):
         }
     )
 
-
 @login_required
 def stats(request):
     recommendations = get_recommendations(request.user)
@@ -186,17 +185,16 @@ def stats(request):
     avg_average_understanding = sum(r.average_understanding for r in recommendations) / total_problems
     avg_half_life = sum(r.half_life for r in recommendations) / total_problems
     avg_retention = sum(r.retention for r in recommendations) / total_problems
-    avg_difficulty = sum(r.difficulty for r in recommendations) / total_problems
+    avg_understanding_gap = sum(r.understanding_gap for r in recommendations) / total_problems
     total_reviews_logged = sum(r.number_of_reviews for r in recommendations)
 
-    overdue_count = sum(1 for r in recommendations if r.days_overdue > 0)
-    due_soon_count = sum(
-        1 for r in recommendations
-        if r.days_overdue == 0 and r.days_until_due <= 3
-    )
     mastered_count = sum(
         1 for r in recommendations
-        if r.retention >= 0.7 and r.difficulty <= 0.3
+        if r.retention >= 0.7 and r.understanding_gap <= 0.3
+    )
+    needs_review_count = sum(
+        1 for r in recommendations
+        if r.recommendation != "NOT RECOMMENDED"
     )
 
     category_totals = defaultdict(lambda: {"count": 0, "understanding": 0.0, "retention": 0.0})
@@ -226,16 +224,14 @@ def stats(request):
         "avg_average_understanding": avg_average_understanding,
         "avg_half_life": avg_half_life,
         "avg_retention": avg_retention,
-        "avg_difficulty": avg_difficulty,
+        "avg_understanding_gap": avg_understanding_gap,
         "total_reviews_logged": total_reviews_logged,
-        "overdue_count": overdue_count,
-        "due_soon_count": due_soon_count,
         "mastered_count": mastered_count,
+        "needs_review_count": needs_review_count,
         "category_breakdown": category_breakdown,
         "weakest": weakest,
         "strongest": strongest,
     })
-
 
 @login_required
 def delete_solution(request, solution_id):
