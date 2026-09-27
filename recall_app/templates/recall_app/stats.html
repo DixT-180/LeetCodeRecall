@@ -1,0 +1,119 @@
+{% extends "recall_app/base.html" %}
+{% block title %}Stats · Recall{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>Stats</h1>
+  <p class="subtitle">Your overall progress across every problem you've reviewed.</p>
+</div>
+
+{% if total_problems == 0 %}
+<div class="empty-state">
+  <h3>No stats yet</h3>
+  <p>Review a few problems first, then come back here to see how you're doing.</p>
+</div>
+{% else %}
+
+<!-- Summary cards -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:28px;">
+
+  <div class="panel" style="padding:16px;">
+    <div style="font-size:12px; color:#666;">Problems tracked</div>
+    <div style="font-size:24px; font-weight:700;">{{ total_problems }}</div>
+  </div>
+
+  <div class="panel" style="padding:16px;">
+    <div style="font-size:12px; color:#666;">Total reviews logged</div>
+    <div style="font-size:24px; font-weight:700;">{{ total_reviews_logged }}</div>
+  </div>
+
+  <div class="panel" style="padding:16px;">
+    <div style="font-size:12px; color:#666;">Avg understanding</div>
+    <div style="font-size:24px; font-weight:700;">{{ avg_average_understanding|floatformat:1 }}/5</div>
+  </div>
+
+  <div class="panel" style="padding:16px;">
+    <div style="font-size:12px; color:#666;">Avg half-life</div>
+    <div style="font-size:24px; font-weight:700;">{{ avg_half_life|floatformat:1 }}d</div>
+  </div>
+
+  <div class="panel" style="padding:16px;">
+    <div style="font-size:12px; color:#666;">Avg retention (now)</div>
+    <div style="font-size:24px; font-weight:700;">{% widthratio avg_retention 1 100 %}%</div>
+  </div>
+
+  <div class="panel" style="padding:16px;">
+    <div style="font-size:12px; color:#666;">Avg difficulty</div>
+    <div style="font-size:24px; font-weight:700;">{% widthratio avg_difficulty 1 100 %}%</div>
+  </div>
+
+</div>
+
+<!-- Status counts -->
+<h2 class="section-title">Right now</h2>
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:28px;">
+  <span class="badge" style="background:#fdecea; color:#a12622; padding:8px 14px; border-radius:6px;">
+    {{ overdue_count }} overdue
+  </span>
+  <span class="badge" style="background:#fff8e1; color:#8a6d00; padding:8px 14px; border-radius:6px;">
+    {{ due_soon_count }} due within 3 days
+  </span>
+  <span class="badge" style="background:#eafaf1; color:#1e7e34; padding:8px 14px; border-radius:6px;">
+    {{ mastered_count }} mastered
+  </span>
+</div>
+
+<!-- Category breakdown -->
+<h2 class="section-title">By category</h2>
+<table class="problem-table" style="margin-bottom:28px;">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th style="width:100px;">Count</th>
+      <th style="width:160px;">Avg understanding</th>
+      <th style="width:140px;">Avg retention</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cat in category_breakdown %}
+    <tr>
+      <td><span class="badge badge-category">{{ cat.category }}</span></td>
+      <td>{{ cat.count }}</td>
+      <td>{{ cat.avg_understanding|floatformat:1 }}/5</td>
+      <td>{% widthratio cat.avg_retention 1 100 %}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<!-- Weakest / strongest -->
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+
+  <div>
+    <h2 class="section-title">Needs the most work</h2>
+    {% for r in weakest %}
+    <a href="{% url 'problem_detail' problemid=r.problem.problemid %}" style="display:block; text-decoration:none; color:inherit; margin-bottom:8px;">
+      <div class="panel" style="padding:10px 14px; display:flex; justify-content:space-between;">
+        <span>#{{ r.problem.problemid }} {{ r.problem.problem_name }}</span>
+        <span style="color:#a12622;">{{ r.priority|floatformat:2 }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div>
+    <h2 class="section-title">Best retained</h2>
+    {% for r in strongest %}
+    <a href="{% url 'problem_detail' problemid=r.problem.problemid %}" style="display:block; text-decoration:none; color:inherit; margin-bottom:8px;">
+      <div class="panel" style="padding:10px 14px; display:flex; justify-content:space-between;">
+        <span>#{{ r.problem.problemid }} {{ r.problem.problem_name }}</span>
+        <span style="color:#1e7e34;">{% widthratio r.retention 1 100 %}%</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endif %}
+{% endblock %}
