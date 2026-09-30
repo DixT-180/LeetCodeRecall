@@ -160,8 +160,8 @@ def calculate_recommendation(
     days_since_last_review
 ):
     
-    current_understanding = current_understanding * 2
-    average_understanding = average_understanding * 2
+    # current_understanding = current_understanding * 2
+    # average_understanding = average_understanding * 2
     # -----------------------------------
     # 1. Adjusted understanding
     # -----------------------------------
