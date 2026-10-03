@@ -52,7 +52,7 @@
 <div class="st-cards">
   <div class="panel st-card"><small>Problems tracked</small><b>{{ total_problems }}</b></div>
   <div class="panel st-card"><small>Reviews logged</small><b>{{ total_reviews_logged }}</b></div>
-  <div class="panel st-card"><small>Avg understanding</small><b>{{ avg_average_understanding|floatformat:1 }}/10</b></div>
+  <div class="panel st-card"><small>Avg understanding</small><b>{{ avg_average_understanding|floatformat:1 }}/5</b></div>
   <div class="panel st-card"><small>Avg retention now</small><b>{% widthratio avg_retention 1 100 %}%</b></div>
   <div class="panel st-card"><small>Avg half-life</small><b>{{ avg_half_life|floatformat:1 }}d</b></div>
   <div class="panel st-card"><small>Avg difficulty</small><b>{% widthratio avg_difficulty 1 100 %}%</b></div>
@@ -179,7 +179,7 @@
       <td><span class="badge badge-category">{{ cat.category }}</span></td>
       <td>{{ cat.count }}</td>
       <td>{{ cat.overdue }}</td>
-      <td>{{ cat.avg_understanding|floatformat:1 }}/10</td>
+      <td>{{ cat.avg_understanding|floatformat:1 }}/5</td>
       <td>{% widthratio cat.avg_retention 1 100 %}%</td>
     </tr>
     {% endfor %}

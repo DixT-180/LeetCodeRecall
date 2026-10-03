@@ -16,7 +16,7 @@ from .recommendation_engine import get_recommendations
 # -----------------------------------
 # Stats page settings
 # -----------------------------------
-MASTERED_UNDERSTANDING = 8      # adjusted understanding (1-10)
+MASTERED_UNDERSTANDING = 4     # adjusted understanding (1-10)
 MASTERED_RETENTION = 0.6        # and still remembered
 LOW_RETENTION_PCT = 50          # "low retention" chip = below this
 STALE_DAYS = 14                 # "not reviewed in 2+ weeks" chip
