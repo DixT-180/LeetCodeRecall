@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from .models import ProblemReview, ReviewHistory
 from .score_engine import calculate_recommendation
-
+from datetime import timedelta
 
 def get_recommendations(user):
     problem_reviews = (
