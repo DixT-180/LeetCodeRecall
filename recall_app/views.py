@@ -11,15 +11,32 @@ from django.views.decorators.http import require_POST
 
 from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
+from .score_engine import RETENTION_THRESHOLD, project_retention
 
 
 # -----------------------------------
 # Stats page settings
 # -----------------------------------
-MASTERED_UNDERSTANDING = 4     # adjusted understanding (1-10)
+MASTERED_UNDERSTANDING = 4      # adjusted understanding (1-5)
 MASTERED_RETENTION = 0.6        # and still remembered
 LOW_RETENTION_PCT = 50          # "low retention" chip = below this
 STALE_DAYS = 14                 # "not reviewed in 2+ weeks" chip
+SOON_DAYS = 3                   # "due in 3 days" chip
+CURVE_DAYS = 30                 # forgetting-curve horizon
+
+REASON_LABELS = {
+    "understanding": "Low understanding",
+    "retention": "Retention low",
+    "ok": "On track",
+}
+
+
+def _parse_understanding(value, default=1):
+    """Understanding is rated 1-5. Coerce to int and clamp."""
+    try:
+        return max(1, min(5, int(value)))
+    except (TypeError, ValueError):
+        return default
 
 
 def register(request):
@@ -149,7 +166,7 @@ def problem_detail(request, problemid):
 
         else:
             notes = request.POST["notes"]
-            understanding = request.POST["understanding"]
+            understanding = _parse_understanding(request.POST.get("understanding"))
 
             if review:
                 review.notes = notes
@@ -189,20 +206,75 @@ def problem_detail(request, problemid):
 # -----------------------------------
 # Stats
 # -----------------------------------
+def _span(days):
+    days = abs(days)
+    if days < 14:
+        return f"{round(days)}d"
+    if days < 60:
+        return f"{round(days / 7)}w"
+    if days < 365:
+        return f"{round(days / 30)}mo"
+    return "1y+"
+
+
 def _ago(days):
-    return "today" if days < 1 else f"{int(days)}d ago"
+    return "today" if days < 1 else f"{_span(days)} ago"
 
 
 def _due(days):
+    """days <= 0 means due now (overdue, or flagged for low understanding)."""
+    if days <= 0:
+        n = math.floor(abs(days))
+        return "overdue", "Due now" if n == 0 else f"Overdue {_span(n)}"
     if days >= 365:
         return "later", "Not due"
-    if days < 0:
-        n = math.floor(abs(days))
-        return "overdue", "Overdue today" if n == 0 else f"Overdue {n}d"
     if days < 1:
         return "soon", "Due today"
-    state = "soon" if days <= 3 else "later"
+    state = "soon" if days <= SOON_DAYS else "later"
     return state, f"In {math.ceil(days)}d"
+
+
+def _mean(values):
+    values = list(values)
+    return sum(values) / len(values) if values else 0.0
+
+
+def _curve(recs):
+    """Average retention over the next CURVE_DAYS days if nothing is reviewed."""
+    W, H, L, R, T, B = 640, 190, 40, 12, 12, 26
+    pw, ph = W - L - R, H - T - B
+
+    def x(t): return L + t / CURVE_DAYS * pw
+    def y(v): return T + (1 - v) * ph
+
+    series = [
+        _mean(
+            project_retention(r.base_retention, r.half_life, r.days_since_last_review + t)
+            for r in recs
+        )
+        for t in range(CURVE_DAYS + 1)
+    ]
+    line = " ".join(
+        f"{'M' if t == 0 else 'L'}{x(t):.1f},{y(v):.1f}" for t, v in enumerate(series)
+    )
+    area = f"{line} L{x(CURVE_DAYS):.1f},{y(0):.1f} L{x(0):.1f},{y(0):.1f} Z"
+    return {
+        "path": line,
+        "area": area,
+        "thr_y": f"{y(RETENTION_THRESHOLD):.1f}",
+        "left": L,
+        "right": W - R,
+        "yticks": [{"y": f"{y(v):.1f}", "label": f"{int(v * 100)}%"} for v in (0, .5, 1)],
+        "xticks": [
+            {"x": f"{x(t):.1f}", "label": "Today" if t == 0 else f"{t}d"}
+            for t in (0, 7, 14, 30)
+        ],
+        "start_x": f"{x(0):.1f}",
+        "start_y": f"{y(series[0]):.1f}",
+        "v7": round(series[7] * 100),
+        "v14": round(series[14] * 100),
+        "v30": round(series[30] * 100),
+    }
 
 
 @login_required
@@ -219,23 +291,27 @@ def stats(request):
         {"lo": 75, "hi": 100, "label": "75% and up", "cls": "r-high", "count": 0},
     ]
     by_cat = defaultdict(list)
-    overdue = due_soon = mastered = low = stale = 0
+    overdue = due_soon = mastered = low = low_understanding = stale = 0
 
     for r in recs:
         r.ret_pct = int(r.retention * 100)
         r.ret_class = "r-low" if r.ret_pct < 30 else "r-mid" if r.ret_pct < 60 else "r-high"
         r.since_label = _ago(r.days_since_last_review)
+        r.due_in_days = r.days_until_due
         r.due_state, r.due_label = _due(r.due_in_days)
+        r.reason_label = REASON_LABELS[r.reason]
 
         buckets[min(r.ret_pct // 25, 3)]["count"] += 1
         by_cat[r.problem.category].append(r)
 
-        if r.due_in_days < 0:
+        if r.due_state == "overdue":
             overdue += 1
-        elif r.due_in_days <= 3:
+        elif r.due_in_days <= SOON_DAYS:
             due_soon += 1
         if r.ret_pct < LOW_RETENTION_PCT:
             low += 1
+        if r.reason == "understanding":
+            low_understanding += 1
         if r.days_since_last_review >= STALE_DAYS:
             stale += 1
         if (r.adjusted_understanding >= MASTERED_UNDERSTANDING
@@ -250,13 +326,13 @@ def stats(request):
             {
                 "category": cat,
                 "count": len(items),
-                "overdue": sum(1 for r in items if r.due_in_days < 0),
-                "avg_understanding": sum(r.adjusted_understanding for r in items) / len(items),
-                "avg_retention": sum(r.retention for r in items) / len(items),
+                "overdue": sum(1 for r in items if r.due_state == "overdue"),
+                "avg_understanding": _mean(r.adjusted_understanding for r in items),
+                "avg_retention_pct": round(_mean(r.retention for r in items) * 100),
             }
             for cat, items in by_cat.items()
         ),
-        key=lambda c: -c["count"],
+        key=lambda c: (-c["overdue"], c["avg_retention_pct"]),
     )
 
     context = {
@@ -265,19 +341,21 @@ def stats(request):
         "total_reviews_logged": ReviewHistory.objects.filter(
             problem_review__user=request.user
         ).count(),
-        "avg_average_understanding": sum(r.average_understanding for r in recs) / total,
-        "avg_half_life": sum(r.half_life for r in recs) / total,
-        "avg_retention": sum(r.retention for r in recs) / total,
-        "avg_difficulty": sum(r.understanding_gap for r in recs) / total,
+        "avg_understanding": _mean(r.adjusted_understanding for r in recs),
+        "avg_memory_span": _mean(r.half_life for r in recs),
+        "avg_retention_pct": round(_mean(r.retention for r in recs) * 100),
         "overdue_count": overdue,
         "due_soon_count": due_soon,
         "mastered_count": mastered,
         "low_retention_count": low,
+        "low_understanding_count": low_understanding,
+        "stale_count": stale,
         "low_cutoff": LOW_RETENTION_PCT - 1,
         "low_cutoff_next": LOW_RETENTION_PCT,
-        "stale_count": stale,
+        "review_threshold_pct": round(RETENTION_THRESHOLD * 100),
         "buckets": buckets,
         "category_breakdown": category_breakdown,
+        "curve": _curve(recs),
     }
     return render(request, "recall_app/stats.html", context)
 
@@ -396,7 +474,9 @@ def review_problem(request, problemid):
     if request.method == "POST":
 
         notes = request.POST.get("notes")
-        understanding = request.POST.get("understanding")
+        understanding = _parse_understanding(
+            request.POST.get("understanding"), default=review.understanding
+        )
 
         review.notes = notes
         review.understanding = understanding
