@@ -2,68 +2,58 @@
 {% block title %}Stats · Recall{% endblock %}
 {% block content %}
 
+<div class="st-page">
 <style>
   .st-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px}
-  .st-card{padding:14px 16px;color:#000}
-  .st-card small{display:block;font-size:12px;color:#000}
-  .st-card b{font-size:22px;color:#000}
+  .st-card{padding:14px 16px}
+  .st-card small{display:block;font-size:12px;color:#666}
+  .st-card b{font-size:22px}
   .st-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
-  .st-chip{border:0;cursor:pointer;padding:9px 14px;border-radius:6px;font:inherit;font-size:14px;color:#000}
-  .st-chip b{font-size:18px;margin-right:4px;color:#000}
-  .c-red{background:#fdecea;color:#000}
-  .c-amber{background:#fff8e1;color:#000}
-  .c-green{background:#eafaf1;color:#000}
-  .c-grey{background:#eef0f3;color:#000}
+  .st-chip{border:0;cursor:pointer;padding:9px 14px;border-radius:6px;font:inherit;font-size:14px}
+  .st-chip b{font-size:18px;margin-right:4px}
+  .c-red{background:#fdecea;color:#a12622}
+  .c-amber{background:#fff8e1;color:#8a6d00}
+  .c-green{background:#eafaf1;color:#1e7e34}
+  .c-grey{background:#eef0f3;color:#444}
   .st-dist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
-  .st-bucket{border:1px solid #e3e5e8;border-radius:8px;padding:10px 12px;background:#fff;cursor:pointer;text-align:left;font:inherit;color:#000}
+  .st-bucket{border:1px solid #e3e5e8;border-radius:8px;padding:10px 12px;background:#fff;cursor:pointer;text-align:left;font:inherit}
   .st-bucket:hover{border-color:#999}
   .st-bucket .bar{height:6px;border-radius:3px;margin:8px 0 6px;background:#eee;overflow:hidden}
   .st-bucket .bar i{display:block;height:100%}
   .st-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px;margin-bottom:14px;align-items:end}
-  .st-filters label{display:block;font-size:12px;color:#000;margin-bottom:4px}
-  .st-filters input,.st-filters select{width:100%;padding:7px 8px;border:1px solid #cfd3d8;border-radius:6px;font:inherit;font-size:14px;box-sizing:border-box;color:#000;background:#fff}.st-filters input::placeholder{color:#555;opacity:1}.st-filters select option{color:#000;background:#fff}
+  .st-filters label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+  .st-filters input,.st-filters select{width:100%;padding:7px 8px;border:1px solid #cfd3d8;border-radius:6px;font:inherit;font-size:14px;box-sizing:border-box}
   .st-range{display:flex;gap:6px;align-items:center}
-  .st-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:#000}
-  .st-meta button{background:none;border:0;color:#000;cursor:pointer;font:inherit;text-decoration:underline}
+  .st-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:#555}
+  .st-meta button{background:none;border:0;color:#2a5db0;cursor:pointer;font:inherit}
   .st-row[hidden]{display:none}
   .st-ret{display:flex;align-items:center;gap:8px}
   .st-ret .track{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden;min-width:60px}
   .st-ret .track i{display:block;height:100%}
   .r-low{background:#d64545}.r-mid{background:#e0a100}.r-high{background:#2e9e55}
   .t-overdue{color:#a12622;font-weight:600}.t-soon{color:#8a6d00;font-weight:600}.t-later{color:#555}
-  .st-empty{padding:28px;text-align:center;color:#000}
+  .st-empty{padding:28px;text-align:center;color:#666}
   .st-clickable{cursor:pointer}.st-clickable:hover{background:#f6f7f9}
+  /* Force readable text: dark on light, regardless of the base theme */
+  .st-page{color:#111}
+  .st-page :is(h1,h2,h3,p,th,td,label,b,small,.subtitle,.empty-state){color:#111}
+  .st-page .st-card small,.st-page .st-meta,.st-page .st-filters label{color:#555}
+  .st-page a{color:#1a4fb4}
+  .st-page .panel{background:#fff;color:#111;border:1px solid #e3e5e8;border-radius:8px}
+  .st-page .problem-table{background:#fff;color:#111}
+  .st-page .problem-table th{background:#f3f4f6}
+  .st-page .problem-table td{background:#fff}
+  .st-page .st-clickable:hover td{background:#f6f7f9}
+  .st-page :is(input,select,button.st-bucket){background:#fff;color:#111}
+  .st-page .st-chip.c-red,.st-page .st-chip.c-red b{color:#a12622}
+  .st-page .st-chip.c-amber,.st-page .st-chip.c-amber b{color:#8a6d00}
+  .st-page .st-chip.c-green,.st-page .st-chip.c-green b{color:#1e7e34}
+  .st-page .st-chip.c-grey,.st-page .st-chip.c-grey b{color:#444}
+  .st-page td.t-overdue{color:#a12622}
+  .st-page td.t-soon{color:#8a6d00}
+  .st-page td.t-later{color:#555}
+  .st-page .st-meta button{background:none;color:#2a5db0}
   @media(max-width:700px){.st-dist{grid-template-columns:repeat(2,1fr)}}
-
-  /* Keep all Stats page text readable on white backgrounds */
-  .st-card,.st-card *,
-  .st-chip,.st-chip *,
-  .st-bucket,.st-bucket *,
-  .st-filters,.st-filters *,
-  .st-meta,.st-meta *,
-  .problem-table,.problem-table *,
-  .st-empty {
-    color:#000;
-  }
-
-  .problem-table a {
-    color:#000;
-  }
-
-  .problem-table a:hover {
-    color:#000;
-    text-decoration:underline;
-  }
-
-  .st-bucket,
-  .st-filters input,
-  .st-filters select {
-    background:#fff;
-  }
-
-  .badge.badge-category {
-    color:#000;
-  }
 </style>
 
 <div class="page-header">
@@ -82,7 +72,7 @@
 <div class="st-cards">
   <div class="panel st-card"><small>Problems tracked</small><b>{{ total_problems }}</b></div>
   <div class="panel st-card"><small>Reviews logged</small><b>{{ total_reviews_logged }}</b></div>
-  <div class="panel st-card"><small>Avg understanding</small><b>{{ avg_average_understanding|floatformat:1 }}/5</b></div>
+  <div class="panel st-card"><small>Avg understanding</small><b>{{ avg_average_understanding|floatformat:1 }}/10</b></div>
   <div class="panel st-card"><small>Avg retention now</small><b>{% widthratio avg_retention 1 100 %}%</b></div>
   <div class="panel st-card"><small>Avg half-life</small><b>{{ avg_half_life|floatformat:1 }}d</b></div>
   <div class="panel st-card"><small>Avg difficulty</small><b>{% widthratio avg_difficulty 1 100 %}%</b></div>
@@ -209,7 +199,7 @@
       <td><span class="badge badge-category">{{ cat.category }}</span></td>
       <td>{{ cat.count }}</td>
       <td>{{ cat.overdue }}</td>
-      <td>{{ cat.avg_understanding|floatformat:1 }}/5</td>
+      <td>{{ cat.avg_understanding|floatformat:1 }}/10</td>
       <td>{% widthratio cat.avg_retention 1 100 %}%</td>
     </tr>
     {% endfor %}
@@ -272,4 +262,5 @@
 </script>
 
 {% endif %}
+</div>
 {% endblock %}
