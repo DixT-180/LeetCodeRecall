@@ -1,3 +1,6 @@
+import math
+from collections import defaultdict
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -8,7 +11,15 @@ from django.views.decorators.http import require_POST
 
 from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
-from collections import defaultdict
+
+
+# -----------------------------------
+# Stats page settings
+# -----------------------------------
+MASTERED_UNDERSTANDING = 8      # adjusted understanding (1-10)
+MASTERED_RETENTION = 0.6        # and still remembered
+LOW_RETENTION_PCT = 50          # "low retention" chip = below this
+STALE_DAYS = 14                 # "not reviewed in 2+ weeks" chip
 
 
 def register(request):
@@ -144,6 +155,7 @@ def problem_detail(request, problemid):
                 review.notes = notes
                 review.understanding = understanding
                 review.number_of_reviews += 1
+                review.last_reviewed = timezone.now()   # restart the due-date clock
                 review.save()
 
             else:
@@ -173,65 +185,102 @@ def problem_detail(request, problemid):
         }
     )
 
+
+# -----------------------------------
+# Stats
+# -----------------------------------
+def _ago(days):
+    return "today" if days < 1 else f"{int(days)}d ago"
+
+
+def _due(days):
+    if days >= 365:
+        return "later", "Not due"
+    if days < 0:
+        n = math.floor(abs(days))
+        return "overdue", "Overdue today" if n == 0 else f"Overdue {n}d"
+    if days < 1:
+        return "soon", "Due today"
+    state = "soon" if days <= 3 else "later"
+    return state, f"In {math.ceil(days)}d"
+
+
 @login_required
 def stats(request):
-    recommendations = get_recommendations(request.user)
-    total_problems = len(recommendations)
-
-    if total_problems == 0:
+    recs = get_recommendations(request.user)   # already sorted by priority
+    total = len(recs)
+    if total == 0:
         return render(request, "recall_app/stats.html", {"total_problems": 0})
 
-    avg_current_understanding = sum(r.current_understanding for r in recommendations) / total_problems
-    avg_average_understanding = sum(r.average_understanding for r in recommendations) / total_problems
-    avg_half_life = sum(r.half_life for r in recommendations) / total_problems
-    avg_retention = sum(r.retention for r in recommendations) / total_problems
-    avg_understanding_gap = sum(r.understanding_gap for r in recommendations) / total_problems
-    total_reviews_logged = sum(r.number_of_reviews for r in recommendations)
-
-    mastered_count = sum(
-        1 for r in recommendations
-        if r.retention >= 0.7 and r.understanding_gap <= 0.3
-    )
-    needs_review_count = sum(
-        1 for r in recommendations
-        if r.recommendation != "NOT RECOMMENDED"
-    )
-
-    category_totals = defaultdict(lambda: {"count": 0, "understanding": 0.0, "retention": 0.0})
-    for r in recommendations:
-        cat = r.problem.category
-        category_totals[cat]["count"] += 1
-        category_totals[cat]["understanding"] += r.average_understanding
-        category_totals[cat]["retention"] += r.retention
-
-    category_breakdown = [
-        {
-            "category": cat,
-            "count": data["count"],
-            "avg_understanding": data["understanding"] / data["count"],
-            "avg_retention": data["retention"] / data["count"],
-        }
-        for cat, data in category_totals.items()
+    buckets = [
+        {"lo": 0, "hi": 24, "label": "Under 25%", "cls": "r-low", "count": 0},
+        {"lo": 25, "hi": 49, "label": "25–49%", "cls": "r-low", "count": 0},
+        {"lo": 50, "hi": 74, "label": "50–74%", "cls": "r-mid", "count": 0},
+        {"lo": 75, "hi": 100, "label": "75% and up", "cls": "r-high", "count": 0},
     ]
-    category_breakdown.sort(key=lambda c: c["avg_retention"])
+    by_cat = defaultdict(list)
+    overdue = due_soon = mastered = low = stale = 0
 
-    weakest = sorted(recommendations, key=lambda r: r.priority, reverse=True)[:5]
-    strongest = sorted(recommendations, key=lambda r: r.priority)[:5]
+    for r in recs:
+        r.ret_pct = int(r.retention * 100)
+        r.ret_class = "r-low" if r.ret_pct < 30 else "r-mid" if r.ret_pct < 60 else "r-high"
+        r.since_label = _ago(r.days_since_last_review)
+        r.due_state, r.due_label = _due(r.due_in_days)
 
-    return render(request, "recall_app/stats.html", {
-        "total_problems": total_problems,
-        "avg_current_understanding": avg_current_understanding,
-        "avg_average_understanding": avg_average_understanding,
-        "avg_half_life": avg_half_life,
-        "avg_retention": avg_retention,
-        "avg_understanding_gap": avg_understanding_gap,
-        "total_reviews_logged": total_reviews_logged,
-        "mastered_count": mastered_count,
-        "needs_review_count": needs_review_count,
+        buckets[min(r.ret_pct // 25, 3)]["count"] += 1
+        by_cat[r.problem.category].append(r)
+
+        if r.due_in_days < 0:
+            overdue += 1
+        elif r.due_in_days <= 3:
+            due_soon += 1
+        if r.ret_pct < LOW_RETENTION_PCT:
+            low += 1
+        if r.days_since_last_review >= STALE_DAYS:
+            stale += 1
+        if (r.adjusted_understanding >= MASTERED_UNDERSTANDING
+                and r.retention >= MASTERED_RETENTION):
+            mastered += 1
+
+    for b in buckets:
+        b["share"] = round(b["count"] / total * 100)
+
+    category_breakdown = sorted(
+        (
+            {
+                "category": cat,
+                "count": len(items),
+                "overdue": sum(1 for r in items if r.due_in_days < 0),
+                "avg_understanding": sum(r.adjusted_understanding for r in items) / len(items),
+                "avg_retention": sum(r.retention for r in items) / len(items),
+            }
+            for cat, items in by_cat.items()
+        ),
+        key=lambda c: -c["count"],
+    )
+
+    context = {
+        "recommendations": recs,
+        "total_problems": total,
+        "total_reviews_logged": ReviewHistory.objects.filter(
+            problem_review__user=request.user
+        ).count(),
+        "avg_average_understanding": sum(r.average_understanding for r in recs) / total,
+        "avg_half_life": sum(r.half_life for r in recs) / total,
+        "avg_retention": sum(r.retention for r in recs) / total,
+        "avg_difficulty": sum(r.understanding_gap for r in recs) / total,
+        "overdue_count": overdue,
+        "due_soon_count": due_soon,
+        "mastered_count": mastered,
+        "low_retention_count": low,
+        "low_cutoff": LOW_RETENTION_PCT - 1,
+        "low_cutoff_next": LOW_RETENTION_PCT,
+        "stale_count": stale,
+        "buckets": buckets,
         "category_breakdown": category_breakdown,
-        "weakest": weakest,
-        "strongest": strongest,
-    })
+    }
+    return render(request, "recall_app/stats.html", context)
+
 
 @login_required
 def delete_solution(request, solution_id):

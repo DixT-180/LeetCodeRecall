@@ -109,6 +109,7 @@ def get_recommendations(user):
             result["understanding_gap"]
         )
 
+        problem_review.due_in_days = result["due_in_days"]
         problem_review.forgetting_risk = (
             result["forgetting_risk"]
         )

@@ -2,9 +2,43 @@
 {% block title %}Stats · Recall{% endblock %}
 {% block content %}
 
+<style>
+  .st-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px}
+  .st-card{padding:14px 16px}
+  .st-card small{display:block;font-size:12px;color:#666}
+  .st-card b{font-size:22px}
+  .st-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+  .st-chip{border:0;cursor:pointer;padding:9px 14px;border-radius:6px;font:inherit;font-size:14px}
+  .st-chip b{font-size:18px;margin-right:4px}
+  .c-red{background:#fdecea;color:#a12622}
+  .c-amber{background:#fff8e1;color:#8a6d00}
+  .c-green{background:#eafaf1;color:#1e7e34}
+  .c-grey{background:#eef0f3;color:#444}
+  .st-dist{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+  .st-bucket{border:1px solid #e3e5e8;border-radius:8px;padding:10px 12px;background:#fff;cursor:pointer;text-align:left;font:inherit}
+  .st-bucket:hover{border-color:#999}
+  .st-bucket .bar{height:6px;border-radius:3px;margin:8px 0 6px;background:#eee;overflow:hidden}
+  .st-bucket .bar i{display:block;height:100%}
+  .st-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px;margin-bottom:14px;align-items:end}
+  .st-filters label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+  .st-filters input,.st-filters select{width:100%;padding:7px 8px;border:1px solid #cfd3d8;border-radius:6px;font:inherit;font-size:14px;box-sizing:border-box}
+  .st-range{display:flex;gap:6px;align-items:center}
+  .st-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:#555}
+  .st-meta button{background:none;border:0;color:#2a5db0;cursor:pointer;font:inherit}
+  .st-row[hidden]{display:none}
+  .st-ret{display:flex;align-items:center;gap:8px}
+  .st-ret .track{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden;min-width:60px}
+  .st-ret .track i{display:block;height:100%}
+  .r-low{background:#d64545}.r-mid{background:#e0a100}.r-high{background:#2e9e55}
+  .t-overdue{color:#a12622;font-weight:600}.t-soon{color:#8a6d00;font-weight:600}.t-later{color:#555}
+  .st-empty{padding:28px;text-align:center;color:#666}
+  .st-clickable{cursor:pointer}.st-clickable:hover{background:#f6f7f9}
+  @media(max-width:700px){.st-dist{grid-template-columns:repeat(2,1fr)}}
+</style>
+
 <div class="page-header">
   <h1>Stats</h1>
-  <p class="subtitle">Your overall progress across every problem you've reviewed.</p>
+  <p class="subtitle">See what's fading and what to review next.</p>
 </div>
 
 {% if total_problems == 0 %}
@@ -14,106 +48,198 @@
 </div>
 {% else %}
 
-<!-- Summary cards -->
-<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-bottom:28px;">
-
-  <div class="panel" style="padding:16px;">
-    <div style="font-size:12px; color:#666;">Problems tracked</div>
-    <div style="font-size:24px; font-weight:700;">{{ total_problems }}</div>
-  </div>
-
-  <div class="panel" style="padding:16px;">
-    <div style="font-size:12px; color:#666;">Total reviews logged</div>
-    <div style="font-size:24px; font-weight:700;">{{ total_reviews_logged }}</div>
-  </div>
-
-  <div class="panel" style="padding:16px;">
-    <div style="font-size:12px; color:#666;">Avg understanding</div>
-    <div style="font-size:24px; font-weight:700;">{{ avg_average_understanding|floatformat:1 }}/5</div>
-  </div>
-
-  <div class="panel" style="padding:16px;">
-    <div style="font-size:12px; color:#666;">Avg half-life</div>
-    <div style="font-size:24px; font-weight:700;">{{ avg_half_life|floatformat:1 }}d</div>
-  </div>
-
-  <div class="panel" style="padding:16px;">
-    <div style="font-size:12px; color:#666;">Avg retention (now)</div>
-    <div style="font-size:24px; font-weight:700;">{% widthratio avg_retention 1 100 %}%</div>
-  </div>
-
-  <div class="panel" style="padding:16px;">
-    <div style="font-size:12px; color:#666;">Avg difficulty</div>
-    <div style="font-size:24px; font-weight:700;">{% widthratio avg_difficulty 1 100 %}%</div>
-  </div>
-
+<!-- Summary -->
+<div class="st-cards">
+  <div class="panel st-card"><small>Problems tracked</small><b>{{ total_problems }}</b></div>
+  <div class="panel st-card"><small>Reviews logged</small><b>{{ total_reviews_logged }}</b></div>
+  <div class="panel st-card"><small>Avg understanding</small><b>{{ avg_average_understanding|floatformat:1 }}/10</b></div>
+  <div class="panel st-card"><small>Avg retention now</small><b>{% widthratio avg_retention 1 100 %}%</b></div>
+  <div class="panel st-card"><small>Avg half-life</small><b>{{ avg_half_life|floatformat:1 }}d</b></div>
+  <div class="panel st-card"><small>Avg difficulty</small><b>{% widthratio avg_difficulty 1 100 %}%</b></div>
 </div>
 
-<!-- Status counts -->
+<!-- Quick filters -->
 <h2 class="section-title">Right now</h2>
-<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:28px;">
-  <span class="badge" style="background:#fdecea; color:#a12622; padding:8px 14px; border-radius:6px;">
-    {{ overdue_count }} overdue
-  </span>
-  <span class="badge" style="background:#fff8e1; color:#8a6d00; padding:8px 14px; border-radius:6px;">
-    {{ due_soon_count }} due within 3 days
-  </span>
-  <span class="badge" style="background:#eafaf1; color:#1e7e34; padding:8px 14px; border-radius:6px;">
-    {{ mastered_count }} mastered
-  </span>
+<div class="st-chips">
+  <button class="st-chip c-red" data-set='{"due":"overdue","sort":"due"}'><b>{{ overdue_count }}</b> overdue</button>
+  <button class="st-chip c-amber" data-set='{"due":"3","sort":"due"}'><b>{{ due_soon_count }}</b> due in 3 days</button>
+  <button class="st-chip c-red" data-set='{"max":"{{ low_cutoff }}","sort":"ret"}'><b>{{ low_retention_count }}</b> retention under {{ low_cutoff_next }}%</button>
+  <button class="st-chip c-grey" data-set='{"since":"14","sort":"since"}'><b>{{ stale_count }}</b> not reviewed in 2+ weeks</button>
+  <span class="st-chip c-green" style="cursor:default"><b>{{ mastered_count }}</b> mastered</span>
 </div>
+
+<!-- Retention distribution -->
+<h2 class="section-title">Retention spread</h2>
+<div class="st-dist">
+  {% for b in buckets %}
+  <button class="st-bucket" data-set='{"min":"{{ b.lo }}","max":"{{ b.hi }}","sort":"ret"}'>
+    <b style="font-size:20px">{{ b.count }}</b> <span style="font-size:13px;color:#666">problems</span>
+    <div class="bar"><i class="{{ b.cls }}" style="width:{{ b.share }}%"></i></div>
+    <span style="font-size:13px">{{ b.label }}</span>
+  </button>
+  {% endfor %}
+</div>
+
+<!-- Review finder -->
+<h2 class="section-title" id="st-filters">Find problems to review</h2>
+<div class="panel st-filters">
+  <div><label for="f-q">Search</label><input id="f-q" type="search" placeholder="Name or #id"></div>
+  <div><label for="f-since">Not reviewed for at least</label>
+    <select id="f-since">
+      <option value="0">Any time</option>
+      <option value="7">1 week</option>
+      <option value="14">2 weeks</option>
+      <option value="21">3 weeks</option>
+      <option value="30">1 month</option>
+      <option value="60">2 months</option>
+      <option value="90">3 months</option>
+    </select></div>
+  <div><label for="f-due">Due</label>
+    <select id="f-due">
+      <option value="any">Any</option>
+      <option value="overdue">Overdue</option>
+      <option value="due7">Overdue + next 7 days</option>
+      <option value="3">In the next 3 days</option>
+      <option value="7">In the next 7 days</option>
+      <option value="14">In the next 14 days</option>
+      <option value="30">In the next 30 days</option>
+    </select></div>
+  <div><label>Retention between (%)</label>
+    <div class="st-range">
+      <input id="f-min" type="number" min="0" max="100" placeholder="0">
+      <span>–</span>
+      <input id="f-max" type="number" min="0" max="100" placeholder="100">
+    </div></div>
+  <div><label for="f-cat">Category</label>
+    <select id="f-cat">
+      <option value="">All</option>
+      {% for cat in category_breakdown %}<option value="{{ cat.category }}">{{ cat.category }}</option>{% endfor %}
+    </select></div>
+  <div><label for="f-sort">Sort by</label>
+    <select id="f-sort">
+      <option value="priority">Highest priority</option>
+      <option value="ret">Lowest retention</option>
+      <option value="due">Due soonest</option>
+      <option value="since">Longest since review</option>
+    </select></div>
+</div>
+
+<div class="st-meta">
+  <span><b id="st-count">0</b> of {{ total_problems }} problems match</span>
+  <button id="f-reset" type="button">Reset filters</button>
+</div>
+
+<table class="problem-table" style="margin-bottom:12px;">
+  <thead>
+    <tr>
+      <th>Problem</th>
+      <th style="width:90px;">Category</th>
+      <th style="width:180px;">Retention</th>
+      <th style="width:110px;">Last reviewed</th>
+      <th style="width:120px;">Due</th>
+      <th style="width:70px;">Under&shy;standing</th>
+    </tr>
+  </thead>
+  <tbody id="st-body">
+    {% for r in recommendations %}
+    <tr class="st-row"
+        data-ret="{{ r.ret_pct }}"
+        data-since="{{ r.days_since_last_review|stringformat:'.1f' }}"
+        data-due="{{ r.due_in_days|stringformat:'.1f' }}"
+        data-priority="{{ r.priority|stringformat:'.4f' }}"
+        data-cat="{{ r.problem.category }}"
+        data-name="#{{ r.problem.problemid }} {{ r.problem.problem_name|lower }}">
+      <td><a href="{% url 'problem_detail' problemid=r.problem.problemid %}">#{{ r.problem.problemid }} {{ r.problem.problem_name }}</a></td>
+      <td><span class="badge badge-category">{{ r.problem.category }}</span></td>
+      <td><div class="st-ret"><div class="track"><i class="{{ r.ret_class }}" style="width:{{ r.ret_pct }}%"></i></div><span>{{ r.ret_pct }}%</span></div></td>
+      <td>{{ r.since_label }}</td>
+      <td class="t-{{ r.due_state }}">{{ r.due_label }}</td>
+      <td>{{ r.adjusted_understanding|floatformat:1 }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div id="st-empty" class="st-empty" hidden>Nothing matches these filters. Widen the time frame or reset.</div>
 
 <!-- Category breakdown -->
-<h2 class="section-title">By category</h2>
+<h2 class="section-title" style="margin-top:28px;">By category</h2>
 <table class="problem-table" style="margin-bottom:28px;">
   <thead>
     <tr>
       <th>Category</th>
-      <th style="width:100px;">Count</th>
+      <th style="width:90px;">Count</th>
+      <th style="width:100px;">Overdue</th>
       <th style="width:160px;">Avg understanding</th>
       <th style="width:140px;">Avg retention</th>
     </tr>
   </thead>
   <tbody>
     {% for cat in category_breakdown %}
-    <tr>
+    <tr class="st-clickable" data-set='{"cat":"{{ cat.category|escapejs }}","sort":"priority"}'>
       <td><span class="badge badge-category">{{ cat.category }}</span></td>
       <td>{{ cat.count }}</td>
-      <td>{{ cat.avg_understanding|floatformat:1 }}/5</td>
+      <td>{{ cat.overdue }}</td>
+      <td>{{ cat.avg_understanding|floatformat:1 }}/10</td>
       <td>{% widthratio cat.avg_retention 1 100 %}%</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 
-<!-- Weakest / strongest -->
-<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+  const rows = [...document.querySelectorAll('.st-row')];
+  const body = $('st-body');
+  const f = {q:$('f-q'), since:$('f-since'), due:$('f-due'), cat:$('f-cat'),
+             min:$('f-min'), max:$('f-max'), sort:$('f-sort')};
 
-  <div>
-    <h2 class="section-title">Needs the most work</h2>
-    {% for r in weakest %}
-    <a href="{% url 'problem_detail' problemid=r.problem.problemid %}" style="display:block; text-decoration:none; color:inherit; margin-bottom:8px;">
-      <div class="panel" style="padding:10px 14px; display:flex; justify-content:space-between;">
-        <span>#{{ r.problem.problemid }} {{ r.problem.problem_name }}</span>
-        <span style="color:#a12622;">{{ r.priority|floatformat:2 }}</span>
-      </div>
-    </a>
-    {% endfor %}
-  </div>
+  function dueOk(d, v) {
+    if (v === 'any') return true;
+    if (v === 'overdue') return d < 0;
+    if (v === 'due7') return d <= 7;
+    return d >= 0 && d <= parseFloat(v);
+  }
 
-  <div>
-    <h2 class="section-title">Best retained</h2>
-    {% for r in strongest %}
-    <a href="{% url 'problem_detail' problemid=r.problem.problemid %}" style="display:block; text-decoration:none; color:inherit; margin-bottom:8px;">
-      <div class="panel" style="padding:10px 14px; display:flex; justify-content:space-between;">
-        <span>#{{ r.problem.problemid }} {{ r.problem.problem_name }}</span>
-        <span style="color:#1e7e34;">{% widthratio r.retention 1 100 %}%</span>
-      </div>
-    </a>
-    {% endfor %}
-  </div>
+  function apply() {
+    const q = f.q.value.trim().toLowerCase();
+    const since = +f.since.value;
+    const min = f.min.value === '' ? 0 : +f.min.value;
+    const max = f.max.value === '' ? 100 : +f.max.value;
+    let n = 0;
+    rows.forEach(r => {
+      const d = r.dataset;
+      const ok = (!q || d.name.includes(q)) && +d.since >= since &&
+                 dueOk(+d.due, f.due.value) && (!f.cat.value || d.cat === f.cat.value) &&
+                 +d.ret >= min && +d.ret <= max;
+      r.hidden = !ok;
+      if (ok) n++;
+    });
+    $('st-count').textContent = n;
+    $('st-empty').hidden = n !== 0;
+    const keys = {priority: r => -r.dataset.priority, ret: r => +r.dataset.ret,
+                  due: r => +r.dataset.due, since: r => -r.dataset.since};
+    const key = keys[f.sort.value];
+    rows.slice().sort((a, b) => key(a) - key(b)).forEach(r => body.appendChild(r));
+  }
 
-</div>
+  function reset() {
+    f.q.value = ''; f.since.value = '0'; f.due.value = 'any'; f.cat.value = '';
+    f.min.value = ''; f.max.value = ''; f.sort.value = 'priority';
+  }
+
+  document.querySelectorAll('[data-set]').forEach(el => el.addEventListener('click', () => {
+    reset();
+    const s = JSON.parse(el.dataset.set);
+    for (const k in s) f[k].value = s[k];
+    apply();
+    $('st-filters').scrollIntoView({behavior: 'smooth'});
+  }));
+  Object.values(f).forEach(el => el.addEventListener('input', apply));
+  $('f-reset').addEventListener('click', () => { reset(); apply(); });
+  apply();
+})();
+</script>
 
 {% endif %}
 {% endblock %}
