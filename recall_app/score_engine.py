@@ -8,12 +8,13 @@ MAX_UNDERSTANDING = 5            # your input scale is 1-5
 
 RETENTION_THRESHOLD = 0.3        # below this a problem is "due"
 MAX_DUE_DAYS = 365               # cap for problems that never decay
+MAX_BASE_RETENTION = 0.9         # even a perfect 5 should slowly fade
 LOW_UNDERSTANDING = 2.5          # below this -> "improve understanding"
 
 
 def days_until_threshold(base_retention, half_life):
     """Days after the last review until retention drops to the threshold."""
-    if base_retention >= 1.0:    # top understanding never decays
+    if base_retention >= 1.0:
         return MAX_DUE_DAYS
     t = half_life * math.log(RETENTION_THRESHOLD) / math.log(base_retention)
     return min(t, MAX_DUE_DAYS)
@@ -39,10 +40,10 @@ def calculate_recommendation(
         ) / (number_of_reviews + 1)
 
     # -----------------------------------
-    # 2. Base retention (0-1)
+    # 2. Base retention (capped so a perfect score still decays)
     # -----------------------------------
     base_retention = (adjusted_understanding - MIN_UNDERSTANDING) / span
-    base_retention = max(0.01, min(base_retention, 1.0))
+    base_retention = max(0.01, min(base_retention, MAX_BASE_RETENTION))
 
     # -----------------------------------
     # 3. Review stability
