@@ -21,7 +21,7 @@ def get_recommendations(user):
         .values_list("problem_review_id")
         .annotate(avg=Avg("understanding"))
     )
-    now = timezone.now() + timedelta(days=15)
+    now = timezone.now() 
     recommendations = []
 
     for pr in problem_reviews:
