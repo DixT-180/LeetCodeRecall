@@ -1,5 +1,6 @@
 import math
 from collections import defaultdict
+from datetime import timedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
@@ -12,6 +13,14 @@ from django.views.decorators.http import require_POST
 from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
 from .score_engine import RETENTION_THRESHOLD, project_retention
+
+
+# -----------------------------------
+# Review settings
+# -----------------------------------
+# Reviews of the same problem within this window replace each other
+# instead of stacking up.
+REVIEW_REPLACE_WINDOW = timedelta(hours=24)
 
 
 # -----------------------------------
@@ -168,25 +177,58 @@ def problem_detail(request, problemid):
             notes = request.POST["notes"]
             understanding = _parse_understanding(request.POST.get("understanding"))
 
+            # Most recent logged review for this problem (if any)
+            latest_history = None
             if review:
-                review.notes = notes
-                review.understanding = understanding
-                review.number_of_reviews += 1
-                review.last_reviewed = timezone.now()   # restart the due-date clock
-                review.save()
-
-            else:
-                review = ProblemReview.objects.create(
-                    user=request.user,
-                    problem=problem,
-                    notes=notes,
-                    understanding=understanding
+                latest_history = (
+                    ReviewHistory.objects
+                    .filter(problem_review=review)
+                    .order_by("-reviewed_at")
+                    .first()
                 )
 
-            ReviewHistory.objects.create(
-                problem_review=review,
-                understanding=understanding
+            replace_previous = (
+                latest_history is not None
+                and timezone.now() - latest_history.reviewed_at < REVIEW_REPLACE_WINDOW
             )
+
+            if replace_previous:
+                # Same day: overwrite the previous review instead of adding
+                # a new one. Review count and history length stay the same.
+                latest_history.understanding = understanding
+                latest_history.save()
+
+                review.notes = notes
+                review.understanding = understanding
+                review.last_reviewed = timezone.now()
+                review.save()
+
+                messages.info(
+                    request,
+                    "You already reviewed this within the last 24 hours, "
+                    "so your previous review was replaced."
+                )
+
+            else:
+                if review:
+                    review.notes = notes
+                    review.understanding = understanding
+                    review.number_of_reviews += 1
+                    review.last_reviewed = timezone.now()   # restart the due-date clock
+                    review.save()
+
+                else:
+                    review = ProblemReview.objects.create(
+                        user=request.user,
+                        problem=problem,
+                        notes=notes,
+                        understanding=understanding
+                    )
+
+                ReviewHistory.objects.create(
+                    problem_review=review,
+                    understanding=understanding
+                )
 
             return redirect("problem_detail", problemid=problemid)
 
