@@ -1,6 +1,5 @@
 import math
 from collections import defaultdict
-from datetime import timedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
@@ -13,14 +12,6 @@ from django.views.decorators.http import require_POST
 from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
 from .score_engine import RETENTION_THRESHOLD, project_retention
-
-
-# -----------------------------------
-# Review settings
-# -----------------------------------
-# Reviews of the same problem within this window replace each other
-# instead of stacking up.
-REVIEW_REPLACE_WINDOW = timedelta(hours=24)
 
 
 # -----------------------------------
@@ -187,9 +178,12 @@ def problem_detail(request, problemid):
                     .first()
                 )
 
+            # One review per calendar day: if the latest review was made
+            # today (in the project's TIME_ZONE), replace it.
             replace_previous = (
                 latest_history is not None
-                and timezone.now() - latest_history.reviewed_at < REVIEW_REPLACE_WINDOW
+                and timezone.localtime(latest_history.reviewed_at).date()
+                    == timezone.localdate()
             )
 
             if replace_previous:
@@ -205,7 +199,7 @@ def problem_detail(request, problemid):
 
                 messages.info(
                     request,
-                    "You already reviewed this within the last 24 hours, "
+                    "You already reviewed this today, "
                     "so your previous review was replaced."
                 )
 
