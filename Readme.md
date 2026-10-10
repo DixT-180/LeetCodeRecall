@@ -146,43 +146,41 @@ docker compose exec web python manage.py migrate recall_app
 
 ---
 
-## 8. Seed the initial LeetCode problem catalog
+## 8. Seed the problem catalog: use the recall_app_problem dump to load the LeetCode problems into your database:
 
-A management command (`seed_problems.py`) populates the `Problem` table with
-~29 real LeetCode problems (id, name, category, description, examples) plus
-one synthetic practice problem. It only touches the `Problem` table — no
-users, reviews, or solutions are affected, and it's safe to re-run (it
-updates existing rows by `problemid` instead of duplicating them).
+1. Copy the SQL dump into the MySQL container
+```bash
 
-**Before running it**, make sure the file is placed at:
+docker cp recall_app_problem.sql leetcoderecall-db-1:/opt/recall_app_problem.sql
 
 ```
-recall_app/management/commands/seed_leetcode.py
-```
 
-> Note: `docker-compose.yml` currently mounts
-> `./recall_app/management/commands` on the host to
-> `/app/leetcode/management/commands` in the container. Since the app is
-> actually named `recall_app` (per `INSTALLED_APPS` in `settings.py`), not
-> `leetcode`, double check that path lines up with where Django expects to
-> find the command before running it — otherwise `seed_problems` won't show
-> up as an available command.
-
-Once the file is in place, run:
+2. Import into the new database
 
 ```bash
-docker compose exec web python manage.py seed_leetcode
+docker exec -it leetcoderecall-db-1 mysql -u root -p
 ```
 
-You should see output like:
+3. Enter your MySQL root password, then run:
 
+```bash
+CREATE DATABASE IF NOT EXISTS recall_app;
+USE recall_app;
+SOURCE /opt/recall_app_problem.sql;
 ```
-Done. Problems created: 29, updated: 0, total in list: 29.
+
+4. Verify the imported table
+```bash
+SHOW TABLES;
+SELECT COUNT(*) FROM recall_app_problem;
+DESCRIBE recall_app_problem;
 ```
 
-Re-running it later is safe — it just updates the existing rows.
+Run on the host:
 
----
+  ```bash
+docker compose exec web python manage.py createsuperuser
+```
 
 ## 9. (Optional) Create an admin user
 
@@ -190,7 +188,6 @@ Re-running it later is safe — it just updates the existing rows.
 docker compose exec web python manage.py createsuperuser
 ```
 
----
 
 ## 10. Use the app
 
