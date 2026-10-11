@@ -690,10 +690,24 @@ button, input, textarea, select {
 }
 
 /* ============================================================
-   Responsive
+   Responsive — phones & small tablets
+   (desktop styles above are untouched; everything here is
+   scoped to narrow screens only)
    ============================================================ */
 
 @media (max-width: 760px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Inputs at 16px stop iOS Safari zooming in on focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* ---------- Shell: slim top bar + bottom tab bar ---------- */
+
   .app-shell {
     flex-direction: column;
   }
@@ -701,37 +715,527 @@ button, input, textarea, select {
   .sidebar {
     width: 100%;
     height: auto;
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 30;
     flex-direction: row;
     align-items: center;
-    padding: 12px 14px;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
   }
 
-  .nav {
-    flex-direction: row;
+  .brand {
+    padding: 0;
   }
 
   .user-chip {
     border-top: none;
-    margin-top: 0;
+    margin: 0;
+    padding: 0;
+    gap: 12px;
   }
+
+  .username {
+    display: none;
+  }
+
+  .logout-btn {
+    font-size: 13px;
+    padding: 8px 4px;
+    color: var(--text-muted);
+  }
+
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    flex: none;
+    flex-direction: row;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-link {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    padding: 7px 2px;
+    font-size: 11px;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .nav-link::before {
+    content: "";
+    width: 22px;
+    height: 22px;
+    background: currentColor;
+    -webkit-mask: var(--nav-icon) center / contain no-repeat;
+    mask: var(--nav-icon) center / contain no-repeat;
+  }
+
+  /* One icon per tab (Dashboard, Problems, History, Stats, Add) */
+  .nav-link:nth-child(1) { --nav-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='7' height='9'/%3E%3Crect x='14' y='3' width='7' height='5'/%3E%3Crect x='14' y='12' width='7' height='9'/%3E%3Crect x='3' y='16' width='7' height='5'/%3E%3C/svg%3E"); }
+  .nav-link:nth-child(2) { --nav-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='8' y1='6' x2='21' y2='6'/%3E%3Cline x1='8' y1='12' x2='21' y2='12'/%3E%3Cline x1='8' y1='18' x2='21' y2='18'/%3E%3Cline x1='3' y1='6' x2='3.01' y2='6'/%3E%3Cline x1='3' y1='12' x2='3.01' y2='12'/%3E%3Cline x1='3' y1='18' x2='3.01' y2='18'/%3E%3C/svg%3E"); }
+  .nav-link:nth-child(3) { --nav-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpolyline points='12 7 12 12 15 14'/%3E%3C/svg%3E"); }
+  .nav-link:nth-child(4) { --nav-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='20' x2='18' y2='10'/%3E%3Cline x1='12' y1='20' x2='12' y2='4'/%3E%3Cline x1='6' y1='20' x2='6' y2='14'/%3E%3C/svg%3E"); }
+  .nav-link:nth-child(5) { --nav-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cline x1='12' y1='8' x2='12' y2='16'/%3E%3Cline x1='8' y1='12' x2='16' y2='12'/%3E%3C/svg%3E"); }
 
   .main {
-    padding: 22px 18px 50px 18px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 18px 14px calc(96px + env(safe-area-inset-bottom, 0px)) 14px;
   }
 
-  .rec-card {
-    flex-direction: column;
-    align-items: stretch;
+  .page-header {
+    margin-bottom: 16px;
   }
 
-  .rec-retention {
-    width: 100%;
+  .page-header h1,
+  .problem-head h1 {
+    font-size: 20px;
+  }
+
+  .page-header .subtitle {
+    font-size: 13.5px;
+  }
+
+  .section-title {
+    margin: 26px 0 12px 0;
+  }
+
+  /* ---------- Forms & buttons: thumb-sized ---------- */
+
+  .field input[type="text"],
+  .field input[type="password"],
+  .field textarea,
+  .field select {
+    padding: 12px;
+  }
+
+  .btn {
+    min-height: 44px;
+    padding: 12px 18px;
   }
 
   .form-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+  }
+
+  .form-row .field {
+    margin-bottom: 0;
+  }
+
+  .understanding-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .form-row .btn,
+  .panel > form > .btn {
+    width: 100% !important;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .auth-main {
+    align-items: flex-start;
+    padding: 48px 16px 24px;
+  }
+
+  .auth-card {
+    padding: 26px 20px;
+  }
+
+  /* Add / edit problem forms use inline light-theme styles;
+     bring them in line with the dark theme on phones */
+  .add-problem-form input,
+  .add-problem-form textarea {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px !important;
+  }
+
+  .add-problem-form label {
+    color: var(--text-muted);
+    font-size: 12.5px;
+  }
+
+  .add-problem-form small {
+    color: var(--text-faint) !important;
+  }
+
+  /* ---------- Dashboard ---------- */
+
+  .rec-controls {
+    justify-content: stretch !important;
+  }
+
+  #sort-select {
+    width: 100%;
+    padding: 12px !important;
+    background-color: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .rec-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .rec-card-link {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .rec-title {
+    white-space: normal;
+    overflow: visible;
+    line-height: 1.35;
+    padding-right: 92px; /* room for the Reset button */
+    margin-bottom: 6px;
+  }
+
+  .rec-meta {
+    flex-wrap: wrap;
+    gap: 3px 12px;
+    margin-top: 4px;
+  }
+
+  .rec-recommendation {
+    margin: 8px 0;
+    font-size: 13.5px;
+  }
+
+  .rec-retention {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .retention-track {
+    height: 8px;
+  }
+
+  .btn-reset {
+    background: var(--surface-alt) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-muted) !important;
+    padding: 8px 12px !important;
+    font-size: 12.5px !important;
+  }
+
+  /* ---------- Tables become stacked cards ---------- */
+
+  .problem-table,
+  .problem-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .problem-table {
+    background: none;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .problem-table thead {
+    display: none;
+  }
+
+  .problem-table tr {
+    display: grid;
+    gap: 6px 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .problem-table td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .problem-table tr.st-row[hidden] {
+    display: none;
+  }
+
+  /* Problems list */
+  .problem-table:not(.history-table) tr.problem-row {
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+  }
+
+  .problem-table:not(.history-table) tr.problem-row td:nth-child(2) {
+    font-size: 15px;
+  }
+
+  .problem-table:not(.history-table) tr.problem-row td:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .problem-table:not(.history-table) tr.problem-row td:last-child {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .problem-table:not(.history-table) td:last-child a,
+  .problem-table:not(.history-table) td:last-child form {
+    flex: 1;
+    display: flex !important;
+    margin: 0 !important;
+  }
+
+  .problem-table:not(.history-table) td:last-child a,
+  .problem-table:not(.history-table) td:last-child button {
+    width: 100%;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .problem-table:not(.history-table) td:last-child a {
+    background: var(--surface-alt) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-muted) !important;
+  }
+
+  .problem-table:not(.history-table) td:last-child button {
+    background: var(--bad-bg) !important;
+    border: 1px solid rgba(239, 71, 67, 0.35) !important;
+    color: var(--bad) !important;
+  }
+
+  /* Search bar on the problems page */
+  .main form[method="get"] {
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  .main form[method="get"] input[type="text"] {
+    flex: 1 1 100% !important;
+    min-width: 0;
+    background: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+    padding: 12px !important;
+    border-radius: var(--radius-sm) !important;
+  }
+
+  .main form[method="get"] .btn {
+    flex: 1;
+    min-height: 44px;
+  }
+
+  /* History */
+  .history-table tr.problem-row {
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+  }
+
+  .history-table td:nth-child(1) {
+    grid-column: 1 / -1;
+    font-weight: 500;
+  }
+
+  .history-table td:nth-child(3) {
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 12.5px;
+  }
+
+  /* ---------- Problem detail ---------- */
+
+  .problem-desc {
+    padding: 14px;
+    margin: 12px 0 20px 0;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .solution-header {
+    padding: 10px 12px;
+  }
+
+  .solution-code {
+    padding: 14px;
+    font-size: 12.5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .solution-explanation {
+    padding: 12px 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .solution-footer {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .solution-footer button {
+    min-height: 36px;
+    padding: 6px 14px !important;
+    font-size: 13px !important;
+  }
+
+  .solution-footer button[type="button"] {
+    background: var(--surface-alt) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-muted) !important;
+    margin-right: 0 !important;
+  }
+
+  /* Edit-solution card holds its own form, give it padding */
+  .solution-card > form {
+    padding: 14px;
+  }
+
+  /* ---------- Stats ---------- */
+
+  .st-page .st-hero {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .st-page .st-hero h2 {
+    font-size: 18px;
+  }
+
+  .st-page .st-curve svg {
+    overflow: visible;
+  }
+
+  .st-page .st-curve {
+    padding-left: 8px;
+  }
+
+  /* chart text is drawn in a 640-wide viewBox, so scale it up to stay legible */
+  .st-page .st-curve text {
+    font-size: 18px;
+  }
+
+  .st-page .st-chip {
+    flex: 1 1 calc(50% - 10px);
+    text-align: left;
+    min-height: 44px;
+  }
+
+  .st-page .st-filters {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: dense;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .st-page .st-filters > div:nth-child(1),
+  .st-page .st-filters > div:nth-child(5) {
+    grid-column: 1 / -1;
+  }
+
+  .st-page .st-filters input,
+  .st-page .st-filters select {
+    padding: 11px 10px;
+  }
+
+  .st-page .st-meta {
+    gap: 10px;
+  }
+
+  .st-page .st-link {
+    padding: 8px 0;
+  }
+
+  /* Touch screens: highlight the whole card, not individual cells */
+  .st-page .st-row:hover td,
+  .st-page .st-clickable:hover td {
+    background: transparent;
+  }
+
+  .st-page tr.st-row:hover,
+  .st-page tr.st-clickable:hover {
+    background: var(--surface-alt);
+  }
+
+  /* Review finder rows */
+  .st-page tr.st-row {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+
+  .st-page tr.st-row td:nth-child(1) { grid-column: 1 / -1; grid-row: 1; font-size: 14.5px; line-height: 1.35; }
+  .st-page tr.st-row td:nth-child(2) { grid-column: 1;      grid-row: 2; justify-self: start; }
+  .st-page tr.st-row td:nth-child(7) { grid-column: 2;      grid-row: 2; justify-self: end; font-family: var(--font-mono); font-size: 12.5px; }
+  .st-page tr.st-row td:nth-child(3) { grid-column: 1 / -1; grid-row: 3; }
+  .st-page tr.st-row td:nth-child(4) { grid-column: 1;      grid-row: 4; font-size: 13px; color: var(--text-muted); }
+  .st-page tr.st-row td:nth-child(5) { grid-column: 2;      grid-row: 4; font-size: 13px; text-align: right; }
+  .st-page tr.st-row td:nth-child(6) { grid-column: 1 / -1; grid-row: 5; }
+
+  .st-page tr.st-row td:nth-child(4)::before { content: "Reviewed "; }
+  .st-page tr.st-row td:nth-child(7)::before { content: "Understanding "; color: var(--text-faint); }
+
+  /* Category breakdown rows */
+  .st-page tr.st-clickable {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .st-page tr.st-clickable td:nth-child(1) { grid-column: 1 / -1; }
+  .st-page tr.st-clickable td:nth-child(2)::before { content: "Problems "; color: var(--text-faint); }
+  .st-page tr.st-clickable td:nth-child(3)::before { content: "Due now "; color: var(--text-faint); }
+  .st-page tr.st-clickable td:nth-child(4)::before { content: "Understanding "; color: var(--text-faint); }
+  .st-page tr.st-clickable td:nth-child(5)::before { content: "Retention "; color: var(--text-faint); }
+  .st-page tr.st-clickable td { font-size: 13px; }
+  .st-page tr.st-clickable td:nth-child(1) { font-size: 14px; }
+}
+
+@media (max-width: 380px) {
+  .main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .nav-link {
+    font-size: 10.5px;
+  }
+
+  .st-page .st-dist {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .st-page .st-card b {
+    font-size: 19px;
   }
 }
 
@@ -740,4 +1244,3 @@ button, input, textarea, select {
     transition: none !important;
   }
 }
-
