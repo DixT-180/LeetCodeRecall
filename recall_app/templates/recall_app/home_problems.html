@@ -1,113 +1,163 @@
+{% extends "recall_app/base.html" %}
+{% block title %}Problems · Recall{% endblock %}
+{% block content %}
 
-{% extends "recall_app/base.html" %} 
-{% block title %}Problems · Recall{% endblock %} 
-{% block content %} 
- 
-<div class="page-header"> 
-  <h1>Problems</h1> 
-  <p class="subtitle">{{ problems|length }} problem{{ problems|length|pluralize }} in the bank.</p> 
-</div> 
- 
-<form method="get" style="margin-bottom: 18px; display: flex; gap: 8px;"> 
-  <input 
-    type="text" 
-    name="q" 
-    value="{{ query }}" 
-    placeholder="Search by problem ID or title..." 
-    style="flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; color: #111; background: #fff;" 
-  > 
-  <button 
-    type="submit" 
-    class="btn btn-secondary" 
-    style="padding: 8px 16px; border-radius: 6px; cursor: pointer;" 
-  > 
-    Search 
-  </button> 
-  {% if query %} 
-  <a 
-    href="{% url 'home_problems' %}" 
-    class="btn btn-secondary" 
-    style="padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;" 
-  > 
-    Clear 
-  </a> 
-  {% endif %} 
-</form> 
- 
-{% if messages %} 
- 
-<div class="page-messages" style="margin-bottom: 16px;"> 
-  {% for message in messages %} 
-    <div 
-      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}" 
-      style="padding: 10px 14px; border-radius: 6px; background: #eafaf1; border: 1px solid #b7ebc6; color: #1e7e34; font-size: 14px; margin-bottom: 8px;" 
-    > 
-      {{ message }} 
-    </div> 
-  {% endfor %} 
-</div> 
-{% endif %} 
- 
-{% if problems %} 
- 
-<table class="problem-table"> 
-  <thead> 
-    <tr> 
-      <th style="width: 70px;">ID</th> 
-      <th>Name</th> 
-      <th style="width: 160px;">Category</th> 
-      <th style="width: 140px;"></th> 
-    </tr> 
-  </thead> 
-  <tbody> 
-    {% for problem in problems %} 
-    <tr class="problem-row" onclick="window.location='{% url 'problem_detail' problemid=problem.problemid %}';" style="cursor: pointer;"> 
-      <td class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">{{ problem.problemid }}</td> 
-      <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td> 
-      <td><span class="badge badge-category">{{ problem.category }}</span></td> 
-      <td style="white-space: nowrap;"> 
-        <a 
-          href="{% url 'edit_problem' problemid=problem.problemid %}" 
-          onclick="event.stopPropagation();" 
-          title="Edit this problem" 
-          style="background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12); color: #555; border-radius: 4px; padding: 2px 7px; font-size: 11px; text-decoration: none; margin-right: 12px; display: inline-block;" 
-        > 
-          ✎ Edit 
-        </a> 
+<div class="page-header">
+  <h1>Problems</h1>
+  <p class="subtitle">
+    {{ problems|length }} problem{{ problems|length|pluralize }}
+    {% if selected_category %}in {{ selected_category }}{% elif query %}matching "{{ query }}"{% else %}in the bank{% endif %}.
+  </p>
+</div>
 
-        <form 
-          method="post" 
-          action="{% url 'delete_problem' problemid=problem.problemid %}" 
-          onsubmit="return confirm('Delete #{{ problem.problemid }} - {{ problem.problem_name|escapejs }}? This removes all reviews, history, and solutions tied to it. Cannot be undone.');" 
-          onclick="event.stopPropagation();" 
-          style="display: inline-block;" 
-        > 
-          {% csrf_token %} 
-          <button 
-            type="submit" 
-            title="Delete this problem" 
-            style="background: rgba(200,0,0,0.05); border: 1px solid rgba(200,0,0,0.18); color: #a12622; border-radius: 4px; padding: 2px 7px; font-size: 11px; cursor: pointer;" 
-          > 
-            🗑 Delete 
-          </button> 
-        </form> 
-      </td> 
-    </tr> 
-    {% endfor %} 
-  </tbody> 
-</table> 
- 
-{% else %} 
- 
-<div class="empty-state"> 
-  {% if query %} 
-  <h3>No matches for "{{ query }}"</h3> 
-  <p>Try a different ID or title, or <a href="{% url 'home_problems' %}">clear the search</a>.</p> 
-  {% else %} 
-  <h3>No problems yet</h3> 
-  <p>Add problems from the admin panel to get started.</p> 
-  {% endif %} 
-</div> 
- 
-{% endif %} 
+<form method="get" style="margin-bottom: 14px; display: flex; gap: 8px;">
+  {% if selected_category %}
+    <input type="hidden" name="category" value="{{ selected_category }}">
+  {% endif %}
+  <input
+    type="text"
+    name="q"
+    value="{{ query }}"
+    placeholder="Search by problem ID, title, or category..."
+    style="flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; color: #111; background: #fff;"
+  >
+  <button
+    type="submit"
+    class="btn btn-secondary"
+    style="padding: 8px 16px; border-radius: 6px; cursor: pointer;"
+  >
+    Search
+  </button>
+  {% if query or selected_category %}
+  <a
+    href="{% url 'home_problems' %}"
+    class="btn btn-secondary"
+    style="padding: 8px 16px; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center;"
+  >
+    Clear
+  </a>
+  {% endif %}
+</form>
+
+<!-- Categories -->
+<div class="category-bar">
+  <a
+    href="?{% if query %}q={{ query|urlencode }}{% endif %}"
+    class="category-chip{% if not selected_category %} active{% endif %}"
+  >
+    All <span class="chip-count">{{ total_count }}</span>
+  </a>
+  {% for c in categories %}
+  <a
+    href="?category={{ c.category|urlencode }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+    class="category-chip{% if c.category == selected_category %} active{% endif %}"
+  >
+    {{ c.category }} <span class="chip-count">{{ c.count }}</span>
+  </a>
+  {% endfor %}
+</div>
+
+<style>
+  .category-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(128,128,128,0.35);
+    font-size: 13px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+  }
+  .category-chip:hover { background: rgba(128,128,128,0.12); }
+  .category-chip.active {
+    background: #2f6fed;
+    border-color: #2f6fed;
+    color: #fff;
+  }
+  .chip-count { font-size: 11px; opacity: 0.7; }
+</style>
+
+{% if messages %}
+<div class="page-messages" style="margin-bottom: 16px;">
+  {% for message in messages %}
+    <div
+      class="alert{% if message.tags %} alert-{{ message.tags }}{% endif %}"
+      style="padding: 10px 14px; border-radius: 6px; background: #eafaf1; border: 1px solid #b7ebc6; color: #1e7e34; font-size: 14px; margin-bottom: 8px;"
+    >
+      {{ message }}
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if problems %}
+
+<table class="problem-table">
+  <thead>
+    <tr>
+      <th style="width: 70px;">ID</th>
+      <th>Name</th>
+      <th style="width: 160px;">Category</th>
+      <th style="width: 140px;"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for problem in problems %}
+    <tr class="problem-row" onclick="window.location='{% url 'problem_detail' problemid=problem.problemid %}';" style="cursor: pointer;">
+      <td class="rec-id" style="font-family: var(--font-mono); color: var(--text-faint);">{{ problem.problemid }}</td>
+      <td><a href="{% url 'problem_detail' problemid=problem.problemid %}" class="problem-name-link">{{ problem.problem_name }}</a></td>
+      <td><span class="badge badge-category">{{ problem.category }}</span></td>
+      <td style="white-space: nowrap;">
+        <a
+          href="{% url 'edit_problem' problemid=problem.problemid %}"
+          onclick="event.stopPropagation();"
+          title="Edit this problem"
+          style="background: rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.12); color: #555; border-radius: 4px; padding: 2px 7px; font-size: 11px; text-decoration: none; margin-right: 12px; display: inline-block;"
+        >
+          ✎ Edit
+        </a>
+
+        <form
+          method="post"
+          action="{% url 'delete_problem' problemid=problem.problemid %}"
+          onsubmit="return confirm('Delete #{{ problem.problemid }} - {{ problem.problem_name|escapejs }}? This removes all reviews, history, and solutions tied to it. Cannot be undone.');"
+          onclick="event.stopPropagation();"
+          style="display: inline-block;"
+        >
+          {% csrf_token %}
+          <button
+            type="submit"
+            title="Delete this problem"
+            style="background: rgba(200,0,0,0.05); border: 1px solid rgba(200,0,0,0.18); color: #a12622; border-radius: 4px; padding: 2px 7px; font-size: 11px; cursor: pointer;"
+          >
+            🗑 Delete
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% else %}
+
+<div class="empty-state">
+  {% if query or selected_category %}
+  <h3>No matches{% if query %} for "{{ query }}"{% endif %}{% if selected_category %} in {{ selected_category }}{% endif %}</h3>
+  <p>Try a different search or category, or <a href="{% url 'home_problems' %}">clear the filters</a>.</p>
+  {% else %}
+  <h3>No problems yet</h3>
+  <p>Add problems from the admin panel to get started.</p>
+  {% endif %}
+</div>
+
+{% endif %}
 {% endblock %}

@@ -13,7 +13,7 @@ from .models import Problem, ProblemReview, ReviewHistory, Solution
 from .recommendation_engine import get_recommendations
 from .score_engine import RETENTION_THRESHOLD, project_retention
 
-
+from django.db.models import Q, Count
 # -----------------------------------
 # Stats page settings
 # -----------------------------------
@@ -83,31 +83,38 @@ def logout_view(request):
 
     return redirect("login")
 
-
 @login_required
 def problem_list(request):
-
     query = request.GET.get("q", "").strip()
+    selected_category = request.GET.get("category", "").strip()
 
     problems = Problem.objects.all()
 
+    if selected_category:
+        problems = problems.filter(category=selected_category)
+
     if query:
+        q_filter = Q(problem_name__icontains=query) | Q(category__icontains=query)
         if query.isdigit():
-            problems = problems.filter(problemid=query)
-        else:
-            problems = problems.filter(problem_name__icontains=query)
+            q_filter |= Q(problemid=int(query))
+        problems = problems.filter(q_filter)
 
     problems = problems.order_by("problemid")
 
-    return render(
-        request,
-        "recall_app/home_problems.html",
-        {
-            "problems": problems,
-            "query": query,
-        }
+    categories = (
+        Problem.objects
+        .values("category")
+        .annotate(count=Count("id"))
+        .order_by("category")
     )
 
+    return render(request, "recall_app/home_problems.html", {
+        "problems": problems,
+        "query": query,
+        "categories": categories,
+        "selected_category": selected_category,
+        "total_count": Problem.objects.count(),
+    })
 
 @login_required
 def home(request):
